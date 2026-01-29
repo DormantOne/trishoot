@@ -1,0 +1,1095 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CIRCUMFERENCE - Neural Defense Protocol</title>
+    <style>
+        body {
+            margin: 0;
+            background: #050508;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: 'Courier New', 'Microsoft YaHei', 'SimHei', sans-serif;
+            overflow: hidden;
+            color: #00f5ff;
+        }
+        
+        #main-container {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            gap: 20px;
+            position: relative;
+        }
+        
+        #info-panel {
+            width: 350px;
+            height: 900px;
+            background: #050508;
+            border: 2px solid #1a1a2e;
+            border-radius: 8px;
+            box-shadow: 0 0 50px rgba(255, 0, 110, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        #game-container {
+            position: relative;
+            width: 900px;
+            height: 900px;
+            box-shadow: 0 0 50px rgba(255, 0, 110, 0.3);
+            border: 2px solid #1a1a2e;
+            border-radius: 8px;
+            background: #050508;
+        }
+        
+        canvas {
+            display: block;
+        }
+        
+        #ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+        
+        #health-bar {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 400px;
+            height: 28px;
+            background: #1a1a2e;
+            border: 2px solid #ff006e;
+            border-radius: 14px;
+            overflow: hidden;
+            z-index: 5;
+        }
+        
+        #health-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff006e, #ff4081);
+            width: 100%;
+            transition: width 0.3s;
+            box-shadow: 0 0 20px #ff006e;
+        }
+        
+        #core-label {
+            position: absolute;
+            bottom: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 12px;
+            color: #ff006e;
+            text-shadow: 0 0 5px #ff006e;
+            background: rgba(0,0,0,0.8);
+            padding: 2px 10px;
+            border-radius: 2px;
+            z-index: 5;
+        }
+        
+        .warning {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 220px;
+            color: #ff3333;
+            font-size: 18px;
+            font-weight: bold;
+            opacity: 0;
+            pointer-events: none;
+            text-shadow: 0 0 20px #ff0000;
+            background: rgba(0,0,0,0.95);
+            padding: 20px;
+            border: 3px solid #ff0000;
+            border-radius: 8px;
+            text-align: center;
+            animation: flankPulse 0.6s ease-in-out;
+            z-index: 100;
+        }
+        
+        .warning.left-flank {
+            left: 30px;
+            border-left: 8px solid #ff0000;
+        }
+        
+        .warning.right-flank {
+            right: 30px;
+            border-right: 8px solid #ff0000;
+        }
+        
+        @keyframes flankPulse {
+            0% { opacity: 0; transform: translateY(-50%) translateX(20px); }
+            15% { opacity: 1; transform: translateY(-50%) translateX(0); }
+            85% { opacity: 1; transform: translateY(-50%) translateX(0); }
+            100% { opacity: 0; transform: translateY(-50%) translateX(-20px); }
+        }
+        
+        #controls-hint {
+            position: absolute;
+            top: 30px;
+            right: 30px;
+            text-align: right;
+            color: rgba(255,255,255,0.6);
+            font-size: 11px;
+            line-height: 1.6;
+            z-index: 5;
+        }
+        
+        #start-screen, #game-over-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(5, 5, 8, 0.98);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 200;
+            pointer-events: auto;
+        }
+        
+        .title {
+            font-size: 52px;
+            letter-spacing: 8px;
+            color: #00f5ff;
+            text-shadow: 0 0 40px #00f5ff;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .subtitle {
+            font-size: 16px;
+            color: #ff006e;
+            margin-bottom: 50px;
+            max-width: 600px;
+            text-align: center;
+            line-height: 1.8;
+        }
+        
+        .difficulty-btn {
+            background: transparent;
+            border: 2px solid #00f5ff;
+            color: #00f5ff;
+            padding: 18px 50px;
+            margin: 12px;
+            font-family: 'Courier New', monospace;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+        }
+        
+        .difficulty-btn:hover {
+            background: #00f5ff;
+            color: #000;
+            box-shadow: 0 0 40px #00f5ff;
+            transform: scale(1.05);
+        }
+        
+        .difficulty-btn.hard {
+            border-color: #ff006e;
+            color: #ff006e;
+        }
+        
+        .difficulty-btn.hard:hover {
+            background: #ff006e;
+            color: #fff;
+            box-shadow: 0 0 40px #ff006e;
+        }
+        
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+    <div id="main-container">
+        <div id="info-panel">
+            <canvas id="info-canvas" width="350" height="900"></canvas>
+        </div>
+        
+        <div id="game-container">
+            <canvas id="game" width="900" height="900"></canvas>
+            
+            <div id="ui-layer">
+                <div id="health-bar" class="hidden">
+                    <div id="health-fill"></div>
+                </div>
+                <div id="core-label" class="hidden">CORE INTEGRITY</div>
+                
+                <div id="controls-hint" class="hidden">
+                    <div style="color:#ffd700; margin-bottom:5px">★ GOLD TARGET = HEAL + BONUS</div>
+                    [A] Rotate CCW | [S] Rotate CW<br>
+                    [MOUSE] Aim | [CLICK] Fire<br>
+                    <span style="color:#ff6600; font-size:10px">WARNING: CROSSFIRE DAMAGES ALLIES</span>
+                </div>
+                
+                <div id="warning-container"></div>
+            </div>
+            
+            <div id="start-screen">
+                <div class="title">CIRCUMFERENCE</div>
+                <div class="subtitle">
+                    Neural Linguistic Defense Protocol<br>
+                    Destroy the <span style="color:#ffd700">GOLD target character</span> to learn and heal.<br>
+                    Memories fade over time. Renewal required.<br>
+                    <span style="font-size:12px; color:#666; margin-top:10px; display:block">Vocabulary persists and decays in real-time. Play daily to maintain mastery.</span>
+                </div>
+                <button class="difficulty-btn" onclick="startGame('easy')">Easy (3 Characters)</button>
+                <button class="difficulty-btn" onclick="startGame('medium')">Medium (6 Characters)</button>
+                <button class="difficulty-btn hard" onclick="startGame('hard')">Hard (12 Characters)</button>
+            </div>
+            
+            <div id="game-over-screen" class="hidden">
+                <div class="title" style="color:#ff006e">SYSTEM FAILURE</div>
+                <div class="subtitle" id="final-score">Final Score: 0</div>
+                <div style="color:#ffd700; margin-bottom:30px; font-size:18px" id="final-words">Neural pathways decaying...</div>
+                <button class="difficulty-btn" onclick="location.reload()">Reboot System</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('game');
+        const ctx = canvas.getContext('2d');
+        const infoCanvas = document.getElementById('info-canvas');
+        const infoCtx = infoCanvas.getContext('2d');
+        
+        let gameState = 'start';
+        let frame = 0;
+        let score = 0;
+        let coreHealth = 100;
+        let difficulty = 'medium';
+        let baseRotation = 0;
+        let friendlyFireWarningCooldown = 0;
+        
+        const VOCAB_KEY = 'circumference_vocab';
+        const LAST_DECAY_KEY = 'circumference_last_decay';
+        
+        function loadVocabulary() {
+            const saved = localStorage.getItem(VOCAB_KEY);
+            return saved ? JSON.parse(saved) : {};
+        }
+        
+        function saveVocabulary(vocab) {
+            localStorage.setItem(VOCAB_KEY, JSON.stringify(vocab));
+        }
+        
+        function getLastDecayTime() {
+            const saved = localStorage.getItem(LAST_DECAY_KEY);
+            return saved ? parseInt(saved) : Date.now();
+        }
+        
+        function saveLastDecayTime() {
+            localStorage.setItem(LAST_DECAY_KEY, Date.now().toString());
+        }
+        
+        let vocabularyBank = loadVocabulary();
+        
+        // Process decay based on real time elapsed (even when game closed)
+        function processOfflineDecay() {
+            const now = Date.now();
+            const lastDecay = getLastDecayTime();
+            const hoursPassed = (now - lastDecay) / (1000 * 60 * 60);
+            
+            if (hoursPassed < 0.01) return; // No meaningful time passed
+            
+            for (let char in vocabularyBank) {
+                const entry = vocabularyBank[char];
+                if (entry.mastery <= 0) continue;
+                
+                // Decay rates per hour: Weak memories (0-30) fade fast, Strong (70+) fade very slow
+                let hourlyDecay = 1.0; // 1% per hour for weak memories
+                if (entry.mastery >= 70) hourlyDecay = 0.05; // 0.05% per hour for mastered
+                else if (entry.mastery >= 30) hourlyDecay = 0.3; // 0.3% per hour for learning
+                
+                const totalDecay = hourlyDecay * hoursPassed;
+                entry.mastery = Math.max(0, entry.mastery - totalDecay);
+            }
+            
+            saveVocabulary(vocabularyBank);
+            saveLastDecayTime();
+        }
+        
+        // Run decay immediately on load (for session-to-session continuity)
+        processOfflineDecay();
+        
+        const center = { x: 450, y: 450 };
+        const arenaRadius = 380;
+        const laserColors = ['#ff006e', '#00f5ff', '#39ff14', '#ffcc00', '#ff4081', '#9d4edd'];
+        
+        const chineseDB = [
+            { char: '人', en: 'Person', cnSent: '那是人', enSent: 'That is a person' },
+            { char: '大', en: 'Big', cnSent: '大雨', enSent: 'Big rain' },
+            { char: '小', en: 'Small', cnSent: '小猫', enSent: 'Small cat' },
+            { char: '水', en: 'Water', cnSent: '喝水', enSent: 'Drink water' },
+            { char: '火', en: 'Fire', cnSent: '小心火', enSent: 'Beware of fire' },
+            { char: '日', en: 'Sun', cnSent: '日光', enSent: 'Sunlight' },
+            { char: '月', en: 'Moon', cnSent: '月亮', enSent: 'The moon' },
+            { char: '木', en: 'Wood', cnSent: '木头', enSent: 'Wood' },
+            { char: '山', en: 'Mountain', cnSent: '高山', enSent: 'High mountain' },
+            { char: '上', en: 'Up', cnSent: '向上', enSent: 'Go up' },
+            { char: '下', en: 'Down', cnSent: '向下', enSent: 'Go down' },
+            { char: '入', en: 'Enter', cnSent: '请入', enSent: 'Please enter' },
+            { char: '八', en: 'Eight', cnSent: '八个', enSent: 'Eight items' },
+            { char: '目', en: 'Eye', cnSent: '眼睛', enSent: 'Eye' },
+            { char: '白', en: 'White', cnSent: '白云', enSent: 'White cloud' }
+        ];
+        
+        let activePool = [];
+        let currentTarget = null;
+        let targetIndex = 0;
+        let decayFrameCounter = 0;
+        
+        const mouse = { x: 450, y: 450, active: false };
+        const keys = {};
+        
+        canvas.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            mouse.x = e.clientX - rect.left;
+            mouse.y = e.clientY - rect.top;
+        });
+        canvas.addEventListener('mousedown', () => mouse.active = true);
+        canvas.addEventListener('mouseup', () => mouse.active = false);
+        
+        window.addEventListener('keydown', (e) => {
+            keys[e.code] = true;
+            if (e.code === 'Space') e.preventDefault();
+        });
+        window.addEventListener('keyup', (e) => keys[e.code] = false);
+        
+        const cannons = [];
+        const aliens = [];
+        const particles = [];
+        
+        function speakWordAndSentence(charData) {
+            if (!('speechSynthesis' in window)) return;
+            window.speechSynthesis.cancel();
+            const wordUtterance = new SpeechSynthesisUtterance(charData.char);
+            wordUtterance.lang = 'zh-CN';
+            wordUtterance.rate = 0.8;
+            const sentUtterance = new SpeechSynthesisUtterance(charData.cnSent);
+            sentUtterance.lang = 'zh-CN';
+            sentUtterance.rate = 0.85;
+            wordUtterance.onend = () => setTimeout(() => window.speechSynthesis.speak(sentUtterance), 300);
+            window.speechSynthesis.speak(wordUtterance);
+        }
+        
+        class Cannon {
+            constructor(index, total) {
+                this.index = index;
+                this.angle = (Math.PI * 2 / total) * index;
+                this.targetAngle = 0;
+                this.x = 0;
+                this.y = 0;
+                this.firing = false;
+                this.cooldown = 0;
+                this.range = arenaRadius * 1.3;
+                this.integrity = 100;
+                this.heat = 0;
+                this.color = laserColors[index % laserColors.length];
+                this.friendlyFireDamage = 0;
+            }
+            
+            update() {
+                const actualAngle = this.angle + baseRotation;
+                const targetX = center.x + Math.cos(actualAngle) * arenaRadius;
+                const targetY = center.y + Math.sin(actualAngle) * arenaRadius;
+                this.x += (targetX - this.x) * 0.1;
+                this.y += (targetY - this.y) * 0.1;
+                const dx = mouse.x - this.x;
+                const dy = mouse.y - this.y;
+                let targetAng = Math.atan2(dy, dx);
+                let diff = targetAng - this.targetAngle;
+                while (diff > Math.PI) diff -= Math.PI * 2;
+                while (diff < -Math.PI) diff += Math.PI * 2;
+                this.targetAngle += diff * 0.1;
+                
+                if (mouse.active && this.cooldown <= 0 && this.integrity > 0) {
+                    this.firing = !this.firing;
+                    this.cooldown = 10;
+                }
+                if (this.cooldown > 0) this.cooldown--;
+                if (this.firing) {
+                    this.integrity -= 0.05;
+                    this.heat += 1.5;
+                    if (this.heat > 100) {
+                        this.firing = false;
+                        showWarning("CANNON OVERHEAT!", "right");
+                    }
+                } else {
+                    this.heat = Math.max(0, this.heat - 1);
+                    if (this.heat === 0 && this.integrity < 100) this.integrity += 0.08;
+                }
+                this.integrity = Math.max(0, Math.min(100, this.integrity));
+            }
+            
+            draw() {
+                const barWidth = 36, barHeight = 3, barX = this.x - barWidth/2, barY = this.y - 30;
+                ctx.fillStyle = '#111';
+                ctx.fillRect(barX, barY, barWidth, barHeight);
+                const healthPct = this.integrity / 100;
+                ctx.fillStyle = healthPct > 0.6 ? '#39ff14' : healthPct > 0.3 ? '#ffcc00' : '#ff006e';
+                ctx.fillRect(barX, barY, barWidth * healthPct, barHeight);
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.targetAngle);
+                ctx.fillStyle = this.integrity > 0 ? this.color : '#333';
+                ctx.shadowBlur = this.integrity > 30 ? 12 : 4;
+                ctx.shadowColor = this.color;
+                ctx.beginPath();
+                ctx.arc(0, 0, 20, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = this.integrity > 30 ? '#fff' : '#666';
+                ctx.fillRect(0, -8, 35, 16);
+                if (this.firing && this.integrity > 0) {
+                    ctx.fillStyle = '#fff';
+                    ctx.shadowBlur = 15;
+                    ctx.shadowColor = '#fff';
+                    ctx.beginPath();
+                    ctx.arc(0, 0, 8, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                ctx.restore();
+            }
+            
+            drawLaser() {
+                if (!this.firing || this.integrity <= 0) return;
+                const endX = this.x + Math.cos(this.targetAngle) * this.range;
+                const endY = this.y + Math.sin(this.targetAngle) * this.range;
+                ctx.strokeStyle = this.color;
+                ctx.lineWidth = 8;
+                ctx.shadowBlur = 25;
+                ctx.shadowColor = this.color;
+                ctx.beginPath();
+                ctx.moveTo(this.x, this.y);
+                ctx.lineTo(endX, endY);
+                ctx.stroke();
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 2;
+                ctx.shadowBlur = 10;
+                ctx.beginPath();
+                ctx.moveTo(this.x, this.y);
+                ctx.lineTo(endX, endY);
+                ctx.stroke();
+            }
+            
+            getLaserEndpoint() {
+                return {
+                    x: this.x + Math.cos(this.targetAngle) * this.range,
+                    y: this.y + Math.sin(this.targetAngle) * this.range
+                };
+            }
+        }
+        
+        class Alien {
+            constructor(charData, tier, isTarget) {
+                const angle = Math.random() * Math.PI * 2;
+                const r = arenaRadius + 25;
+                this.x = center.x + Math.cos(angle) * r;
+                this.y = center.y + Math.sin(angle) * r;
+                this.speed = (0.8 + Math.random()) * (difficulty === 'hard' ? 1.4 : difficulty === 'easy' ? 0.7 : 1.1);
+                this.radius = 22;
+                this.char = charData.char;
+                this.charData = charData;
+                this.isTarget = isTarget;
+                this.maxHealth = isTarget ? tier + 1 : tier;
+                this.health = this.maxHealth;
+                this.dead = false;
+                this.pulse = Math.random() * Math.PI;
+                this.color = isTarget ? '#ffd700' : (tier === 1 ? '#39ff14' : tier === 2 ? '#00f5ff' : '#ff006e');
+            }
+            
+            update() {
+                const dx = center.x - this.x;
+                const dy = center.y - this.y;
+                const dist = Math.sqrt(dx*dx + dy*dy);
+                if (dist > 35) {
+                    this.x += (dx/dist) * this.speed;
+                    this.y += (dy/dist) * this.speed;
+                } else {
+                    coreHealth -= this.isTarget ? 30 : 15;
+                    this.dead = true;
+                    createExplosion(this.x, this.y, '#ff0000');
+                    showWarning(this.isTarget ? "TARGET ESCAPED!" : "IMPACT!", "left");
+                }
+                cannons.forEach(c => {
+                    const cdx = this.x - c.x;
+                    const cdy = this.y - c.y;
+                    if (Math.sqrt(cdx*cdx + cdy*cdy) < 28) {
+                        c.integrity -= 15;
+                        this.health--;
+                        if (this.health <= 0) this.dead = true;
+                        createExplosion(this.x, this.y, '#ffaa00');
+                    }
+                });
+                this.pulse += 0.12;
+            }
+            
+            draw() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                if (this.isTarget) {
+                    ctx.shadowBlur = 25 + Math.sin(this.pulse*3)*10;
+                    ctx.shadowColor = '#ffd700';
+                    ctx.strokeStyle = `rgba(255, 215, 0, ${0.4 + Math.sin(this.pulse)*0.3})`;
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.arc(0, 0, this.radius + 18, 0, Math.PI*2);
+                    ctx.stroke();
+                }
+                const scale = 1 + Math.sin(this.pulse)*0.05;
+                ctx.scale(scale, scale);
+                const hpPct = this.health / this.maxHealth;
+                ctx.beginPath();
+                ctx.arc(0, 0, this.radius + 10, -Math.PI/2, -Math.PI/2 + (Math.PI*2*hpPct));
+                ctx.strokeStyle = this.health === 1 ? '#ff0000' : (this.isTarget ? '#ffd700' : '#39ff14');
+                ctx.lineWidth = 3;
+                ctx.stroke();
+                ctx.fillStyle = this.color;
+                ctx.shadowBlur = this.isTarget ? 20 : 15;
+                ctx.shadowColor = this.color;
+                ctx.beginPath();
+                ctx.arc(0, 0, this.radius, 0, Math.PI*2);
+                ctx.fill();
+                ctx.fillStyle = this.isTarget ? '#000' : 'rgba(0,0,0,0.3)';
+                ctx.beginPath();
+                ctx.arc(0, 0, this.radius*0.65, 0, Math.PI*2);
+                ctx.fill();
+                ctx.fillStyle = this.isTarget ? '#ffd700' : '#fff';
+                ctx.shadowBlur = 0;
+                ctx.font = `bold ${this.isTarget ? 26 : 22}px "Microsoft YaHei", "SimHei", sans-serif`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(this.char, 0, 1);
+                ctx.restore();
+            }
+        }
+        
+        function createExplosion(x, y, color) {
+            for (let i=0; i<12; i++) {
+                particles.push({
+                    x: x, y: y,
+                    vx: (Math.random()-0.5)*10,
+                    vy: (Math.random()-0.5)*10,
+                    life: 1,
+                    color: color,
+                    size: Math.random()*5+2
+                });
+            }
+        }
+        
+        function showWarning(text, flank) {
+            const container = document.getElementById('warning-container');
+            const div = document.createElement('div');
+            div.className = `warning ${flank || 'right'}-flank`;
+            div.textContent = text;
+            container.appendChild(div);
+            setTimeout(() => div.remove(), 1000);
+        }
+        
+        function addBonusWord(charData) {
+            const char = charData.char;
+            const now = Date.now();
+            if (!vocabularyBank[char]) {
+                vocabularyBank[char] = { mastery: 0, hits: 0, lastSeen: now, charData: charData };
+            }
+            const entry = vocabularyBank[char];
+            entry.hits++;
+            entry.lastSeen = now;
+            let gain = 25;
+            if (entry.hits > 1) gain = 15;
+            if (entry.hits > 3) gain = 10;
+            if (entry.hits > 6) gain = 5;
+            entry.mastery = Math.min(100, entry.mastery + gain);
+            saveVocabulary(vocabularyBank);
+            speakWordAndSentence(charData);
+        }
+        
+        function decayVocabularyRealtime() {
+            // Only update every 60 frames (~1 second) to avoid excessive calculations
+            decayFrameCounter++;
+            if (decayFrameCounter % 60 !== 0) return;
+            
+            saveLastDecayTime(); // Keep updating timestamp while playing
+            
+            // During gameplay, slow decay (already calculated offline decay on load)
+            // This handles the " live" decay while game runs
+            for (let char in vocabularyBank) {
+                const entry = vocabularyBank[char];
+                if (entry.mastery <= 0) continue;
+                let secondDecay = entry.mastery >= 70 ? 0.0008 : (entry.mastery >= 30 ? 0.005 : 0.016);
+                entry.mastery = Math.max(0, entry.mastery - secondDecay);
+            }
+        }
+        
+        function drawInfoPanel() {
+            infoCtx.fillStyle = '#050508';
+            infoCtx.fillRect(0, 0, 350, 900);
+            infoCtx.strokeStyle = '#0f0f1a';
+            infoCtx.lineWidth = 1;
+            for(let i=0; i<350; i+=25) { infoCtx.beginPath(); infoCtx.moveTo(i,0); infoCtx.lineTo(i,900); infoCtx.stroke(); }
+            for(let i=0; i<900; i+=25) { infoCtx.beginPath(); infoCtx.moveTo(0,i); infoCtx.lineTo(350,i); infoCtx.stroke(); }
+            
+            let yPos = 30;
+            infoCtx.fillStyle = '#00f5ff';
+            infoCtx.shadowBlur = 10;
+            infoCtx.shadowColor = '#00f5ff';
+            infoCtx.font = 'bold 24px "Courier New", monospace';
+            infoCtx.textAlign = 'center';
+            infoCtx.fillText('TARGET DATA', 175, yPos);
+            yPos += 50;
+            
+            if (currentTarget) {
+                const char = currentTarget.char;
+                const vocabEntry = vocabularyBank[char];
+                const mastery = vocabEntry ? vocabEntry.mastery : 0;
+                const needsRenewal = mastery > 0 && mastery < 30;
+                
+                infoCtx.fillStyle = needsRenewal ? '#ff6600' : '#ffd700';
+                infoCtx.shadowBlur = 20;
+                infoCtx.shadowColor = needsRenewal ? '#ff6600' : '#ffd700';
+                infoCtx.font = 'bold 96px "Microsoft YaHei", "SimHei", sans-serif';
+                infoCtx.fillText(char, 175, yPos);
+                yPos += 100;
+                
+                infoCtx.fillStyle = '#fff';
+                infoCtx.shadowBlur = 0;
+                infoCtx.font = 'bold 22px "Courier New", monospace';
+                infoCtx.fillText(currentTarget.en.toUpperCase(), 175, yPos);
+                yPos += 35;
+                
+                // Mastery Bar with Renewal Indicator
+                infoCtx.fillStyle = '#1a1a2e';
+                infoCtx.fillRect(30, yPos, 290, 20);
+                const barColor = mastery >= 70 ? '#39ff14' : mastery >= 30 ? '#ffcc00' : '#ff006e';
+                infoCtx.fillStyle = barColor;
+                infoCtx.shadowBlur = 10;
+                infoCtx.shadowColor = barColor;
+                infoCtx.fillRect(32, yPos + 2, 286 * (mastery / 100), 16);
+                
+                infoCtx.fillStyle = '#fff';
+                infoCtx.shadowBlur = 0;
+                infoCtx.font = '12px "Courier New", monospace';
+                if (needsRenewal) {
+                    infoCtx.fillText(`RENEWAL REQUIRED: ${Math.floor(mastery)}%`, 175, yPos + 35);
+                } else {
+                    infoCtx.fillText(`NEURAL STRENGTH: ${Math.floor(mastery)}%`, 175, yPos + 35);
+                }
+                yPos += 60;
+                
+                infoCtx.fillStyle = '#39ff14';
+                infoCtx.font = '14px "Courier New", monospace';
+                infoCtx.textAlign = 'left';
+                infoCtx.fillText('CHINESE:', 30, yPos);
+                yPos += 25;
+                
+                const cnText = currentTarget.cnSent;
+                let xOffset = 30;
+                infoCtx.font = '20px "Microsoft YaHei", sans-serif';
+                for (let c of cnText) {
+                    if (c === currentTarget.char) {
+                        infoCtx.fillStyle = needsRenewal ? '#ff6600' : '#ffd700';
+                        infoCtx.shadowBlur = 10;
+                        infoCtx.shadowColor = needsRenewal ? '#ff6600' : '#ffd700';
+                    } else {
+                        infoCtx.fillStyle = '#fff';
+                        infoCtx.shadowBlur = 0;
+                    }
+                    infoCtx.fillText(c, xOffset, yPos);
+                    xOffset += infoCtx.measureText(c).width + 3;
+                }
+                yPos += 35;
+                
+                infoCtx.fillStyle = '#00f5ff';
+                infoCtx.font = '14px "Courier New", monospace';
+                infoCtx.fillText('ENGLISH:', 30, yPos);
+                yPos += 25;
+                infoCtx.fillStyle = '#aaa';
+                infoCtx.font = '16px "Courier New", monospace';
+                const words = currentTarget.enSent.split(' ');
+                let line = '';
+                xOffset = 30;
+                for (let word of words) {
+                    const testLine = line + word + ' ';
+                    const metrics = infoCtx.measureText(testLine);
+                    if (metrics.width > 290 && line !== '') {
+                        infoCtx.fillText(line, 30, yPos);
+                        line = word + ' ';
+                        yPos += 22;
+                    } else {
+                        line = testLine;
+                    }
+                }
+                infoCtx.fillText(line, 30, yPos);
+                yPos += 50;
+            }
+            
+            yPos += 20;
+            infoCtx.strokeStyle = '#ffd700';
+            infoCtx.lineWidth = 2;
+            infoCtx.beginPath();
+            infoCtx.moveTo(30, yPos);
+            infoCtx.lineTo(320, yPos);
+            infoCtx.stroke();
+            yPos += 40;
+            
+            infoCtx.fillStyle = '#39ff14';
+            infoCtx.shadowBlur = 15;
+            infoCtx.shadowColor = '#39ff14';
+            infoCtx.font = 'bold 36px "Courier New", monospace';
+            infoCtx.textAlign = 'center';
+            infoCtx.fillText('SCORE: ' + score, 175, yPos);
+            yPos += 45;
+            
+            infoCtx.fillStyle = coreHealth < 30 ? '#ff0000' : '#00f5ff';
+            infoCtx.shadowBlur = coreHealth < 30 ? 20 : 10;
+            infoCtx.shadowColor = coreHealth < 30 ? '#ff0000' : '#00f5ff';
+            infoCtx.font = 'bold 20px "Courier New", monospace';
+            infoCtx.fillText('INTEGRITY: ' + Math.floor(coreHealth) + '%', 175, yPos);
+            yPos += 70;
+            
+            // Memory Bank - Show renewal candidates prominently
+            infoCtx.fillStyle = '#ff006e';
+            infoCtx.shadowBlur = 10;
+            infoCtx.shadowColor = '#ff006e';
+            infoCtx.font = 'bold 18px "Courier New", monospace';
+            infoCtx.fillText('ACTIVE MEMORY BANK', 175, yPos);
+            yPos += 25;
+            
+            // Sort: prioritize words needing renewal (fading), then by mastery
+            const activeVocab = Object.entries(vocabularyBank)
+                .filter(([char, data]) => data.mastery > 5)
+                .sort((a, b) => {
+                    // Prioritize renewal candidates (mastery 5-30)
+                    const aNeedsRenewal = a[1].mastery < 30;
+                    const bNeedsRenewal = b[1].mastery < 30;
+                    if (aNeedsRenewal && !bNeedsRenewal) return -1;
+                    if (!aNeedsRenewal && bNeedsRenewal) return 1;
+                    return a[1].mastery - b[1].mastery;
+                })
+                .slice(0, 8);
+            
+            if (activeVocab.length === 0) {
+                infoCtx.fillStyle = '#666';
+                infoCtx.font = '12px "Courier New", monospace';
+                infoCtx.fillText('No memories encoded yet...', 175, yPos + 20);
+            } else {
+                infoCtx.textAlign = 'left';
+                for (let [char, data] of activeVocab) {
+                    const needsRenewal = data.mastery < 30;
+                    const barWidth = 280, barHeight = 24, x = 35;
+                    
+                    infoCtx.fillStyle = '#1a1a2e';
+                    infoCtx.fillRect(x, yPos - 18, barWidth, barHeight);
+                    
+                    const fillWidth = (data.mastery / 100) * (barWidth - 4);
+                    const fillColor = needsRenewal ? '#ff006e' : (data.mastery >= 70 ? '#39ff14' : '#ffcc00');
+                    
+                    infoCtx.fillStyle = fillColor;
+                    infoCtx.shadowBlur = needsRenewal ? 15 : 5;
+                    infoCtx.shadowColor = fillColor;
+                    infoCtx.fillRect(x + 2, yPos - 16, fillWidth, barHeight - 4);
+                    
+                    infoCtx.fillStyle = '#fff';
+                    infoCtx.shadowBlur = 0;
+                    infoCtx.font = 'bold 14px "Microsoft YaHei", sans-serif';
+                    infoCtx.fillText(char, x + 8, yPos - 2);
+                    
+                    infoCtx.fillStyle = needsRenewal ? '#ff006e' : '#aaa';
+                    infoCtx.font = needsRenewal ? 'bold 10px "Courier New", monospace' : '10px "Courier New", monospace';
+                    const label = needsRenewal ? `RENEW: ${data.charData.en}` : data.charData.en;
+                    infoCtx.fillText(label, x + 35, yPos - 2);
+                    
+                    infoCtx.fillStyle = '#fff';
+                    infoCtx.textAlign = 'right';
+                    infoCtx.fillText(Math.floor(data.mastery) + '%', x + barWidth - 5, yPos - 2);
+                    infoCtx.textAlign = 'left';
+                    
+                    if (currentTarget && char === currentTarget.char) {
+                        infoCtx.strokeStyle = needsRenewal ? '#ff006e' : '#ffd700';
+                        infoCtx.lineWidth = 2;
+                        infoCtx.strokeRect(x, yPos - 18, barWidth, barHeight);
+                    }
+                    yPos += 32;
+                }
+            }
+            
+            yPos += 20;
+            const totalWords = Object.keys(vocabularyBank).length;
+            const masteredWords = Object.values(vocabularyBank).filter(v => v.mastery >= 70).length;
+            const renewalWords = Object.values(vocabularyBank).filter(v => v.mastery > 0 && v.mastery < 30).length;
+            
+            infoCtx.fillStyle = '#666';
+            infoCtx.font = '11px "Courier New", monospace';
+            infoCtx.textAlign = 'center';
+            infoCtx.fillText(`TOTAL: ${totalWords} | MASTERED: ${masteredWords} | NEED RENEWAL: ${renewalWords}`, 175, yPos);
+        }
+        
+        function getIntersection(c1, c2) {
+            const x1=c1.x, y1=c1.y, x2=c1.x+Math.cos(c1.targetAngle)*c1.range;
+            const y2=c1.y+Math.sin(c1.targetAngle)*c1.range;
+            const x3=c2.x, y3=c2.y, x4=c2.x+Math.cos(c2.targetAngle)*c2.range;
+            const y4=c2.y+Math.sin(c2.targetAngle)*c2.range;
+            const denom = (x1-x2)*(y3-y4)-(y1-y2)*(x3-x4);
+            if (Math.abs(denom)<0.001) return null;
+            const t = ((x1-x3)*(y3-y4)-(y1-y3)*(x3-x4))/denom;
+            const u = -((x1-x2)*(y1-y3)-(y1-y2)*(x1-x3))/denom;
+            if (t>=0 && t<=1 && u>=0 && u<=1) return {x:x1+t*(x2-x1), y:y1+t*(y2-y1)};
+            return null;
+        }
+        
+        function startGame(diff) {
+            difficulty = diff;
+            gameState = 'playing';
+            
+            let poolSize = 3;
+            if (diff === 'medium') poolSize = 6;
+            if (diff === 'hard') poolSize = 12;
+            
+            // RENEWAL SYSTEM: Prioritize words needing review (low mastery) in new instances
+            const allWordsWithMastery = chineseDB.map(word => {
+                const vocab = vocabularyBank[word.char];
+                return {
+                    ...word,
+                    currentMastery: vocab ? vocab.mastery : 0,
+                    needsRenewal: vocab && vocab.mastery > 0 && vocab.mastery < 30
+                };
+            });
+            
+            // Sort: Renewal candidates first, then by lowest mastery (unlearned/new words last)
+            allWordsWithMastery.sort((a, b) => {
+                if (a.needsRenewal && !b.needsRenewal) return -1;
+                if (!a.needsRenewal && b.needsRenewal) return 1;
+                if (a.currentMastery === 0 && b.currentMastery > 0) return 1; // New words last
+                return a.currentMastery - b.currentMastery;
+            });
+            
+            activePool = allWordsWithMastery.slice(0, poolSize);
+            targetIndex = 0;
+            currentTarget = activePool[0];
+            
+            for (let i=0; i<6; i++) cannons.push(new Cannon(i, 6));
+            
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('health-bar').classList.remove('hidden');
+            document.getElementById('core-label').classList.remove('hidden');
+            document.getElementById('controls-hint').classList.remove('hidden');
+            
+            setInterval(() => { if (gameState === 'playing') update(); }, 1000/60);
+            draw();
+        }
+        
+        function update() {
+            frame++;
+            decayVocabularyRealtime(); // Continuous decay while playing
+            
+            if (keys['KeyA']) baseRotation -= 0.03;
+            if (keys['KeyS']) baseRotation += 0.03;
+            
+            // Spawn rate based on difficulty
+            let spawnRate = difficulty === 'easy' ? 100 : (difficulty === 'medium' ? 80 : 60);
+            if (frame % spawnRate === 0 && aliens.length < 18) {
+                const isTarget = Math.random() < 0.3;
+                let charData;
+                if (isTarget) charData = currentTarget;
+                else {
+                    let idx;
+                    do { idx = Math.floor(Math.random()*activePool.length); }
+                    while (activePool[idx].char === currentTarget.char);
+                    charData = activePool[idx];
+                }
+                
+                let tier = 1;
+                if (difficulty === 'medium' && Math.random()>0.6) tier=2;
+                if (difficulty === 'hard') {
+                    const r=Math.random();
+                    if (r>0.7) tier=3;
+                    else if (r>0.4) tier=2;
+                }
+                aliens.push(new Alien(charData, tier, isTarget));
+            }
+            
+            cannons.forEach(c => c.update());
+            
+            const intersections = [];
+            for (let i=0; i<cannons.length; i++) {
+                for (let j=i+1; j<cannons.length; j++) {
+                    if (cannons[i].firing && cannons[j].firing && cannons[i].integrity>0 && cannons[j].integrity>0) {
+                        const pt = getIntersection(cannons[i], cannons[j]);
+                        if (pt) intersections.push(pt);
+                    }
+                }
+            }
+            
+            // Friendly Fire
+            cannons.forEach(shooter => {
+                if (!shooter.firing || shooter.integrity <= 0) return;
+                const end = shooter.getLaserEndpoint();
+                cannons.forEach(target => {
+                    if (target === shooter || target.integrity <= 0) return;
+                    const dx = end.x - shooter.x;
+                    const dy = end.y - shooter.y;
+                    const lenSq = dx*dx + dy*dy;
+                    if (lenSq === 0) return;
+                    const t = Math.max(0, Math.min(1, ((target.x - shooter.x) * dx + (target.y - shooter.y) * dy) / lenSq));
+                    const closestX = shooter.x + t * dx;
+                    const closestY = shooter.y + t * dy;
+                    const dist = Math.hypot(target.x - closestX, target.y - closestY);
+                    if (dist < 25) {
+                        target.integrity -= 0.4;
+                        target.friendlyFireDamage += 0.4;
+                        if (frame % 5 === 0) createExplosion(closestX, closestY, '#ff6600');
+                        if (target.friendlyFireDamage > 20 && friendlyFireWarningCooldown === 0) {
+                            showWarning("FRIENDLY FIRE!", "right");
+                            friendlyFireWarningCooldown = 120;
+                        }
+                    }
+                });
+            });
+            if (friendlyFireWarningCooldown > 0) friendlyFireWarningCooldown--;
+            
+            intersections.forEach(pt => {
+                if (Math.hypot(pt.x-center.x, pt.y-center.y) < 65) coreHealth -= 0.4;
+            });
+            
+            aliens.forEach(alien => {
+                alien.update();
+                cannons.forEach(c => {
+                    if (!c.firing || c.integrity<=0) return;
+                    const dx = Math.cos(c.targetAngle);
+                    const dy = Math.sin(c.targetAngle);
+                    const t = ((alien.x-c.x)*dx + (alien.y-c.y)*dy);
+                    if (t>0 && t<c.range) {
+                        const cx = c.x + dx*t;
+                        const cy = c.y + dy*t;
+                        const dist = Math.hypot(alien.x-cx, alien.y-cy);
+                        if (dist < alien.radius+6) {
+                            alien.health -= 0.4;
+                            if (alien.health<=0 && !alien.dead) {
+                                alien.dead = true;
+                                if (alien.isTarget) {
+                                    score += 100;
+                                    coreHealth = Math.min(100, coreHealth+20);
+                                    addBonusWord(alien.charData);
+                                    createExplosion(alien.x, alien.y, '#ffd700');
+                                    if (difficulty!=='easy') {
+                                        targetIndex = Math.floor(Math.random()*activePool.length);
+                                        currentTarget = activePool[targetIndex];
+                                    }
+                                } else {
+                                    score += 15*alien.maxHealth;
+                                    createExplosion(alien.x, alien.y, alien.color);
+                                }
+                            }
+                        }
+                    }
+                });
+                intersections.forEach(pt => {
+                    if (Math.hypot(alien.x-pt.x, alien.y-pt.y) < 45 && !alien.dead) {
+                        alien.dead = true;
+                        if (alien.isTarget) {
+                            score += 150;
+                            coreHealth = Math.min(100, coreHealth+30);
+                            addBonusWord(alien.charData);
+                            createExplosion(alien.x, alien.y, '#ffd700');
+                        } else {
+                            score += 40;
+                            createExplosion(alien.x, alien.y, '#ffcc00');
+                        }
+                    }
+                });
+            });
+            
+            for (let i=aliens.length-1; i>=0; i--) if (aliens[i].dead) aliens.splice(i,1);
+            for (let i=particles.length-1; i>=0; i--) {
+                const p=particles[i];
+                p.x+=p.vx; p.y+=p.vy; p.life-=0.025; p.vx*=0.95; p.vy*=0.95;
+                if (p.life<=0) particles.splice(i,1);
+            }
+            
+            document.getElementById('health-fill').style.width = Math.max(0,coreHealth)+'%';
+            
+            if (coreHealth<=0) {
+                gameState = 'gameover';
+                const masteredCount = Object.values(vocabularyBank).filter(v => v.mastery >= 70).length;
+                document.getElementById('game-over-screen').classList.remove('hidden');
+                document.getElementById('final-score').textContent = `Final Score: ${score}`;
+                document.getElementById('final-words').textContent = `Neural Pathways Established: ${masteredCount}`;
+            }
+        }
+        
+        function draw() {
+            ctx.fillStyle = '#050508';
+            ctx.fillRect(0,0,900,900);
+            ctx.strokeStyle = '#1a1a2e';
+            ctx.lineWidth = 3;
+            ctx.setLineDash([12,12]);
+            ctx.beginPath();
+            ctx.arc(center.x, center.y, arenaRadius, 0, Math.PI*2);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            ctx.strokeStyle = '#0f0f1a';
+            ctx.lineWidth = 1;
+            for(let i=0; i<900; i+=50) {
+                ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i,900); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(0,i); ctx.lineTo(900,i); ctx.stroke();
+            }
+            if (gameState==='playing') {
+                cannons.forEach((c1,i) => {
+                    cannons.forEach((c2,j) => {
+                        if (i<j && c1.firing && c2.firing && c1.integrity>0 && c2.integrity>0) {
+                            const pt = getIntersection(c1,c2);
+                            if (pt) {
+                                const pulse = Math.sin(frame*0.4)*6;
+                                ctx.fillStyle = '#ffaa00';
+                                ctx.shadowBlur = 35;
+                                ctx.shadowColor = '#ff6600';
+                                ctx.beginPath();
+                                ctx.arc(pt.x, pt.y, 28+pulse, 0, Math.PI*2);
+                                ctx.fill();
+                                ctx.fillStyle = '#fff';
+                                ctx.beginPath();
+                                ctx.arc(pt.x, pt.y, 10, 0, Math.PI*2);
+                                ctx.fill();
+                            }
+                        }
+                    });
+                });
+            }
+            cannons.forEach(c => c.drawLaser());
+            ctx.shadowBlur = 40;
+            ctx.shadowColor = '#00f5ff';
+            ctx.fillStyle = '#00f5ff';
+            ctx.beginPath(); ctx.arc(center.x, center.y, 32, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(center.x, center.y, 45, -Math.PI/2, -Math.PI/2+(Math.PI*2*(coreHealth/100)));
+            ctx.strokeStyle = coreHealth<30?'#ff0000':'#00f5ff';
+            ctx.lineWidth = 4; ctx.stroke();
+            ctx.fillStyle = '#fff';
+            ctx.beginPath(); ctx.arc(center.x, center.y, 16, 0, Math.PI*2); ctx.fill();
+            cannons.forEach(c => c.draw());
+            aliens.forEach(a => a.draw());
+            ctx.globalAlpha = 1;
+            particles.forEach(p => {
+                ctx.globalAlpha = p.life;
+                ctx.fillStyle = p.color;
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = p.color;
+                ctx.fillRect(p.x-p.size/2, p.y-p.size/2, p.size, p.size);
+            });
+            ctx.globalAlpha = 1;
+            drawInfoPanel();
+            if (gameState === 'playing') requestAnimationFrame(draw);
+        }
+    </script>
+</body>
+</html>
