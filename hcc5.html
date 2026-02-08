@@ -503,6 +503,12 @@
                     </div>
 
                     <div class="settings-row">
+                        <span class="settings-label">Metabolic Drain Rate</span>
+                        <input type="range" id="opt-drain" min="1" max="20" value="5" oninput="updateSettingsUI()">
+                        <span id="val-drain" class="settings-value">5</span>
+                    </div>
+
+                    <div class="settings-row">
                         <span class="settings-label">Audio Speech Synthesis</span>
                         <div style="width:200px; text-align:left;">
                             <input type="checkbox" id="opt-speech" checked style="accent-color:#00f5ff; transform:scale(1.5);">
@@ -738,6 +744,7 @@
         let gameSettings = {
             targetDuration: 20, // seconds
             rotationSpeed: 0.03,
+            drainRate: 1.0, // 0.1 to 2.0 multiplier
             speechEnabled: true,
             sfxEnabled: true
         };
@@ -946,6 +953,8 @@
             document.getElementById('val-duration').textContent = gameSettings.targetDuration;
             document.getElementById('opt-rotation').value = gameSettings.rotationSpeed * 100;
             document.getElementById('val-rotation').textContent = Math.round(gameSettings.rotationSpeed * 100);
+            document.getElementById('opt-drain').value = gameSettings.drainRate * 10;
+            document.getElementById('val-drain').textContent = Math.round(gameSettings.drainRate * 10);
             document.getElementById('opt-speech').checked = gameSettings.speechEnabled;
             document.getElementById('opt-sfx').checked = gameSettings.sfxEnabled;
         }
@@ -954,11 +963,13 @@
             // Save from UI
             const dur = parseInt(document.getElementById('opt-duration').value);
             const rot = parseInt(document.getElementById('opt-rotation').value);
+            const drain = parseInt(document.getElementById('opt-drain').value);
             const speech = document.getElementById('opt-speech').checked;
             const sfx = document.getElementById('opt-sfx').checked;
 
             gameSettings.targetDuration = dur;
             gameSettings.rotationSpeed = rot / 100;
+            gameSettings.drainRate = drain / 10;
             gameSettings.speechEnabled = speech;
             gameSettings.sfxEnabled = sfx;
             
@@ -984,6 +995,7 @@
         function updateSettingsUI() {
             document.getElementById('val-duration').textContent = document.getElementById('opt-duration').value;
             document.getElementById('val-rotation').textContent = document.getElementById('opt-rotation').value;
+            document.getElementById('val-drain').textContent = document.getElementById('opt-drain').value;
         }
 
         // --- STATS & QUIZ LOGIC ---
@@ -1409,13 +1421,19 @@
             
             // MODIFIED: Range depends on BOTH Turret Integrity AND Global Core Health (Fuel)
             get range() {
-                // Calculate fuel pressure factor (Global Core Health)
-                const fuelFactor = Math.max(0.2, coreHealth / 100);
-                // Calculate mechanical condition factor (Local Integrity)
-                const mechFactor = Math.max(0.2, this.integrity / 100);
+                // Tuned to be less punishing initially, but drop off if critical
+                // Fuel factor: 100% range until 30% fuel, then drops
+                let fuelFactor = 1.0;
+                if (coreHealth < 30) {
+                    fuelFactor = Math.max(0.4, coreHealth / 30);
+                }
+
+                // Integrity factor: 100% range until 30% integrity
+                let mechFactor = 1.0;
+                if (this.integrity < 30) {
+                    mechFactor = Math.max(0.4, this.integrity / 30);
+                }
                 
-                // Combined factor. Both need to be high for full range.
-                // If fuel is 0, range drops significantly regardless of integrity.
                 return this.maxRange * (fuelFactor * mechFactor);
             }
             
@@ -1441,9 +1459,10 @@
                 if (this.cooldown > 0) this.cooldown--;
                 if (this.firing) {
                     // CONSUME CORE HEALTH (FUEL) WHEN FIRING
-                    // Difficulty adjustment for consumption
-                    let consumption = 0.3; 
-                    if (difficulty === 'hard') consumption = 0.5;
+                    // SIGNIFICANTLY REDUCED DRAIN RATE + Setting Multiplier
+                    let baseConsumption = 0.05; // Was 0.3
+                    let consumption = baseConsumption * gameSettings.drainRate;
+                    
                     coreHealth = Math.max(0, coreHealth - consumption);
                     
                     this.heat += 1.5;
@@ -1581,7 +1600,10 @@
                     let dmgMult = 1.0;
                     if (difficulty === 'hard') dmgMult = 1.5;
                     
-                    const dmg = (this.dxData.isHCC ? 40 : 15) * dmgMult;
+                    // Reduced base damage slightly
+                    let baseDmg = this.dxData.isHCC ? 25 : 10; // Was 40 / 15
+                    const dmg = baseDmg * dmgMult * gameSettings.drainRate;
+                    
                     coreHealth -= dmg; 
                     this.dead = true;
                     sound.explosion();
@@ -2151,7 +2173,8 @@
             cCtx.fillText('This certifies that the authorized user has demonstrated proficiency in', 400, 220);
             cCtx.fillText('Risk Adjustment Coding and Shared Savings Documentation.', 400, 250);
 
-            const hccCaptured = Object.values(vocabularyBank).filter(v => v.dxData.isHCC && v.mastery >= 70).length;
+            const solidifiedCount = Object.values(vocabularyBank).filter(v => v.solidified).length;
+            const totalCount = icdDatabase.length || 0;
             const dateStr = new Date().toLocaleDateString();
 
             // Calculate RAF for Cert
@@ -2165,7 +2188,17 @@
             cCtx.fillStyle = '#ff006e';
             cCtx.fillText(`FINAL RAF SCORE: ${finalRAF.toFixed(3)}`, 400, 340);
             cCtx.fillStyle = '#00f5ff';
-            cCtx.fillText(`HCC CODES MASTERED: ${hccCaptured}`, 400, 390);
+            
+            cCtx.font = '20px "Courier New", monospace';
+            cCtx.fillText(`PROTOCOL SCORE: ${score}`, 400, 380);
+            
+            if (examState.score > 0) {
+                 cCtx.fillStyle = '#39ff14';
+                 cCtx.fillText(`MCP EXAM SCORE: ${examState.score}`, 400, 410);
+            }
+            
+            cCtx.fillStyle = '#000';
+            cCtx.fillText(`KNOWLEDGE BANK: ${solidifiedCount} / ${totalCount} MASTERED`, 400, 440);
 
             cCtx.fillStyle = '#333';
             cCtx.font = '18px "Arial", sans-serif';
