@@ -60,48 +60,26 @@
             pointer-events: none;
         }
         
-        #health-bar-container {
+        #health-bar {
             position: absolute;
             bottom: 40px;
             left: 50%;
             transform: translateX(-50%);
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-            z-index: 5;
-        }
-
-        .bar-frame {
             width: 400px;
-            height: 18px;
+            height: 28px;
             background: #1a1a2e;
-            border-radius: 9px;
+            border: 2px solid #ff006e;
+            border-radius: 14px;
             overflow: hidden;
-            position: relative;
-        }
-        
-        #health-bar {
-            border: 1px solid #ff006e;
+            z-index: 5;
         }
         
         #health-fill {
             height: 100%;
             background: linear-gradient(90deg, #ff006e, #ff4081);
             width: 100%;
-            transition: width 0.1s;
-            box-shadow: 0 0 10px #ff006e;
-        }
-
-        #fuel-bar {
-            border: 1px solid #ffd700;
-        }
-
-        #fuel-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #b8860b, #ffd700);
-            width: 100%;
-            transition: width 0.1s;
-            box-shadow: 0 0 10px #ffd700;
+            transition: width 0.3s;
+            box-shadow: 0 0 20px #ff006e;
         }
         
         #core-label {
@@ -166,35 +144,24 @@
             z-index: 5;
         }
 
-        .ui-btn {
+        #btn-settings-toggle {
+            position: absolute;
+            top: 20px;
+            left: 20px;
             background: rgba(0, 0, 0, 0.5);
             border: 1px solid #00f5ff;
             color: #00f5ff;
             padding: 8px 15px;
             font-family: 'Courier New', monospace;
             cursor: pointer;
+            z-index: 210;
             pointer-events: auto;
             border-radius: 4px;
-            font-size: 12px;
         }
         
-        .ui-btn:hover {
+        #btn-settings-toggle:hover {
             background: #00f5ff;
             color: #000;
-        }
-
-        #btn-settings-toggle {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            z-index: 210;
-        }
-
-        #btn-fullscreen {
-            position: absolute;
-            top: 20px;
-            left: 140px;
-            z-index: 210;
         }
         
         #start-screen, #game-over-screen {
@@ -236,20 +203,6 @@
             padding: 30px;
             border-radius: 10px;
             box-shadow: 0 0 30px rgba(255, 215, 0, 0.2);
-        }
-
-        .exam-content {
-            width: 90%;
-            max-width: 850px;
-            height: 600px;
-            background: #0f0f1a;
-            border: 2px solid #39ff14;
-            padding: 0;
-            border-radius: 10px;
-            box-shadow: 0 0 30px rgba(57, 255, 20, 0.2);
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
         }
 
         .settings-content {
@@ -313,11 +266,6 @@
         }
 
         .quiz-btn:hover {
-            background: #00f5ff;
-            color: #000;
-        }
-        
-        .quiz-btn.selected {
             background: #00f5ff;
             color: #000;
         }
@@ -438,6 +386,7 @@
             z-index: 999;
         }
 
+        /* ADDITIVE: Scrollable Knowledge Base Styles */
         .learn-more-box {
             background: #1a1a2e;
             padding: 15px;
@@ -447,28 +396,61 @@
             color: #ddd;
             line-height: 1.5;
             display: none;
+            max-height: 300px;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: #00f5ff #1a1a2e;
+        }
+        
+        .learn-more-box::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .learn-more-box::-webkit-scrollbar-track {
+            background: #1a1a2e;
+        }
+        
+        .learn-more-box::-webkit-scrollbar-thumb {
+            background-color: #00f5ff;
+            border-radius: 4px;
         }
 
-        .exam-split {
-            display: flex;
-            flex: 1;
-            width: 100%;
-            height: 100%;
+        /* ADDITIVE: Scrollable Protocol Repository */
+        .protocol-scroll-container {
+            max-height: 200px;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: #ffd700 #1a1a2e;
+            margin-top: 10px;
+            padding-right: 5px;
         }
-        .exam-left {
-            flex: 1;
-            padding: 30px;
-            border-right: 1px solid #333;
-            display: flex;
-            flex-direction: column;
+        
+        .protocol-scroll-container::-webkit-scrollbar {
+            width: 6px;
         }
-        .exam-right {
-            flex: 1;
-            padding: 30px;
-            display: flex;
-            flex-direction: column;
-            background: #050508;
+        
+        .protocol-scroll-container::-webkit-scrollbar-track {
+            background: #1a1a2e;
         }
+        
+        .protocol-scroll-container::-webkit-scrollbar-thumb {
+            background-color: #ffd700;
+            border-radius: 3px;
+        }
+
+        /* ADDITIVE: Exam Category Styles */
+        .exam-category {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        
+        .exam-category.low { background: #39ff14; color: #000; }
+        .exam-category.medium { background: #ffd700; color: #000; }
+        .exam-category.high { background: #ff006e; color: #fff; }
     </style>
 </head>
 <body>
@@ -482,26 +464,18 @@
             <canvas id="game" width="900" height="900"></canvas>
             
             <div id="ui-layer">
-                <button id="btn-settings-toggle" class="ui-btn" onclick="openSettings()">SETTINGS [ESC]</button>
-                <button id="btn-fullscreen" class="ui-btn" onclick="toggleFullScreen()">[ ] FULLSCREEN</button>
+                <button id="btn-settings-toggle" onclick="openSettings()">SETTINGS [ESC]</button>
                 
-                <div id="health-bar-container" class="hidden">
-                    <div style="font-size:10px; color:#ff006e; text-align:center;">CLINICAL INTEGRITY</div>
-                    <div class="bar-frame" id="health-bar">
-                        <div id="health-fill"></div>
-                    </div>
-                    <div style="font-size:10px; color:#ffd700; text-align:center; margin-top:5px;">SYSTEM FUEL</div>
-                    <div class="bar-frame" id="fuel-bar">
-                        <div id="fuel-fill"></div>
-                    </div>
+                <div id="health-bar" class="hidden">
+                    <div id="health-fill"></div>
                 </div>
+                <div id="core-label" class="hidden">CLINICAL INTEGRITY</div>
                 
                 <div id="controls-hint" class="hidden">
-                    <div style="color:#ffd700; margin-bottom:5px">★ GOLD = HCC (Intersect Lasers!)</div>
+                    <div style="color:#ffd700; margin-bottom:5px">★ GOLD = HCC HIGH VALUE</div>
                     <div style="color:#39ff14; margin-bottom:5px">★ STAR = SHARED SAVINGS</div>
                     [A] Rotate CCW | [S] Rotate CW<br>
                     [MOUSE] Aim | [CLICK] Fire<br>
-                    <span style="color:#aaa;">Fuel required to Fire/Rotate</span><br>
                     <span style="color:#fff;">CLICK SIDE PANEL TO SOLIDIFY MEMORY</span>
                 </div>
                 
@@ -573,62 +547,27 @@
             <div id="quiz-modal" class="hidden">
                 <div class="quiz-content">
                     <div class="title" style="font-size:24px; margin-bottom:10px; color:#ffd700;">MEMORY SOLIDIFICATION</div>
-                    
-                    <div id="quiz-briefing" class="hidden">
-                        <div style="font-size:16px; color:#aaa; margin-bottom:15px; text-align:center;">PROTOCOL BRIEFING</div>
-                        <div id="briefing-content" style="background:#1a1a2e; padding:15px; font-size:14px; color:#fff; line-height:1.4; margin-bottom:20px; border-left:3px solid #ffd700;">
-                        </div>
-                        <button class="difficulty-btn" style="width:100%; padding:10px;" onclick="startQuizQuestions()">COMMENCE VERIFICATION</button>
-                    </div>
-
-                    <div id="quiz-active" class="hidden">
-                        <div id="quiz-step-indicator" style="color:#aaa; margin-bottom:20px; text-align:center;">PROTOCOL CHECK: PHASE 1/2</div>
-                        <div id="quiz-question-text" class="quiz-question">Identify the clinical entity: E11.9</div>
-                        <div id="quiz-options-container" class="quiz-options">
-                            <!-- Options injected via JS -->
-                        </div>
+                    <div id="quiz-step-indicator" style="color:#aaa; margin-bottom:20px; text-align:center;">PROTOCOL CHECK: PHASE 1/2</div>
+                    <div id="quiz-question-text" class="quiz-question">Identify the clinical entity: E11.9</div>
+                    <div id="quiz-options-container" class="quiz-options">
+                        <!-- Options injected via JS -->
                     </div>
                 </div>
             </div>
             
             <!-- Exam Mode Modal -->
             <div id="exam-modal" class="hidden">
-                <div class="exam-content">
-                    <div style="background:#000; padding:10px; border-bottom:1px solid #333; display:flex; justify-content:space-between; align-items:center;">
-                        <div style="color:#39ff14; font-family:'Courier New'; font-weight:bold;">MCP CERTIFICATION PROTOCOL</div>
-                        <div id="exam-score-display" style="color:#ffd700; font-family:'Courier New'">SCORE: 0</div>
+                <div class="quiz-content" style="border-color: #39ff14; box-shadow: 0 0 30px rgba(57, 255, 20, 0.2);">
+                    <div class="title" style="font-size:24px; margin-bottom:10px; color:#39ff14;">MCP CERTIFICATION EXAM</div>
+                    <div id="exam-step-indicator" style="color:#aaa; margin-bottom:10px; text-align:center;">QUESTION 1 / 5</div>
+                    <div id="exam-score-display" style="color:#ffd700; margin-bottom:20px; text-align:center; font-family:'Courier New'">SCORE: 0</div>
+                    
+                    <div id="exam-question-text" class="quiz-question">Loading Exam...</div>
+                    <div id="exam-options-container" class="quiz-options">
+                        <!-- Options injected via JS -->
                     </div>
                     
-                    <div id="exam-body" class="exam-split">
-                        <div class="exam-left">
-                            <div style="color:#aaa; margin-bottom:10px;">CLINICAL SCENARIO</div>
-                            <div id="exam-scenario-text" style="font-size:24px; color:#fff; margin-bottom:30px; font-weight:bold;">Code: I50.9</div>
-                            <div style="color:#00f5ff; margin-bottom:10px;">SELECT DIAGNOSIS</div>
-                            <div id="exam-dx-options" class="quiz-options" style="flex:1;"></div>
-                        </div>
-                        <div class="exam-right">
-                            <div style="color:#aaa; margin-bottom:10px;">RISK ADJUSTMENT</div>
-                            <div style="color:#ffd700; margin-bottom:10px;">IS THIS AN HCC?</div>
-                            <div style="display:flex; gap:10px; margin-bottom:30px;">
-                                <button id="btn-hcc-yes" class="quiz-btn" style="flex:1; text-align:center;" onclick="selectExamHCC(true)">YES</button>
-                                <button id="btn-hcc-no" class="quiz-btn" style="flex:1; text-align:center;" onclick="selectExamHCC(false)">NO</button>
-                            </div>
-                            
-                            <div id="hcc-tier-section" class="hidden">
-                                <div style="color:#ff6600; margin-bottom:10px;">SEVERITY TIER (WEIGHT)</div>
-                                <div style="display:grid; gap:10px;">
-                                    <button class="quiz-btn" onclick="selectExamTier('low')">LOW (< 0.3)</button>
-                                    <button class="quiz-btn" onclick="selectExamTier('mid')">MID (0.3 - 0.6)</button>
-                                    <button class="quiz-btn" onclick="selectExamTier('high')">HIGH (> 0.6)</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div style="padding:15px; border-top:1px solid #333; text-align:right;">
-                        <button id="btn-submit-exam" class="difficulty-btn" style="padding:10px 30px; font-size:16px;" onclick="submitExamQuestion()">SUBMIT ASSESSMENT</button>
-                        <button id="btn-exit-exam" class="difficulty-btn reset-btn hidden" style="padding:10px 30px; font-size:16px;" onclick="exitExamMode()">RETURN TO CONSOLE</button>
-                    </div>
+                    <button id="btn-exit-exam" class="difficulty-btn reset-btn hidden" style="width:100%; margin-top:20px;" onclick="exitExamMode()">RETURN TO MAIN CONSOLE</button>
                 </div>
             </div>
 
@@ -637,12 +576,12 @@
                 <div class="subtitle">
                     ICD-10/HCC Risk Adjustment Protocol<br>
                     Destroy <span style="color:#ffd700">HCC codes</span> for high value.<br>
-                    <span style="color:#ff6600">WARNING:</span> HCCs are heavily armored. Cross lasers to destroy.<br>
-                    <span style="font-size:12px; color:#aaa;">Fuel is required for systems. Kill HCCs to refuel.</span>
+                    <span style="color:#ff6600">TARGETS SHIFT.</span> Verify ICD-10, Diagnosis, and HCC Status.<br>
+                    <span style="font-size:12px; color:#fff; margin-top:10px; display:block">CLICK mastered codes in the left panel to SOLIDIFY memory via protocol quiz.</span>
                 </div>
-                <button class="difficulty-btn" onclick="startGame('easy')">Residency (Slow, Efficient)</button>
-                <button class="difficulty-btn" onclick="startGame('medium')">Attending (Fast, High Drain)</button>
-                <button class="difficulty-btn hard" onclick="startGame('hard')">Chief (Critical, Starvation)</button>
+                <button class="difficulty-btn" onclick="startGame('easy')">Residency (Slow, Few)</button>
+                <button class="difficulty-btn" onclick="startGame('medium')">Attending (Fast, Swarm)</button>
+                <button class="difficulty-btn hard" onclick="startGame('hard')">Chief (Critical Overload)</button>
                 
                 <div style="border-top: 1px solid #333; width: 60%; margin: 20px 0;"></div>
                 <button class="difficulty-btn exam-btn" onclick="startExamMode()">TAKE MCP EXAM (TEST MODE)</button>
@@ -651,7 +590,7 @@
             </div>
             
             <div id="game-over-screen" class="hidden">
-                <div class="title" style="color:#ff006e">SYSTEM FAILURE</div>
+                <div class="title" style="color:#ff006e">DOCUMENTATION FAILURE</div>
                 <div class="subtitle" id="final-score">Final RAF Score: 0</div>
                 <div style="color:#ffd700; margin-bottom:30px; font-size:18px" id="final-words">HCC Captured: 0</div>
                 <button class="difficulty-btn" onclick="location.reload()">Reboot EHR</button>
@@ -721,6 +660,7 @@
             shoot() { 
                 if(!this.enabled) return;
                 this.playTone(800, 'sawtooth', 0.15, 0.05); 
+                // Slide frequency down for "pew"
                 if(this.ctx) {
                     const osc = this.ctx.createOscillator();
                     const gain = this.ctx.createGain();
@@ -745,6 +685,7 @@
             
             success() {
                 if (!this.enabled || !this.ctx) return;
+                // Major arpeggio
                 setTimeout(() => this.playTone(523.25, 'sine', 0.2, 0.1), 0);
                 setTimeout(() => this.playTone(659.25, 'sine', 0.2, 0.1), 100);
                 setTimeout(() => this.playTone(783.99, 'sine', 0.4, 0.1), 200);
@@ -759,7 +700,7 @@
         
         const sound = new SoundManager();
 
-        // --- EMBEDDED DATA ---
+        // --- EMBEDDED DATA (User Provided + Expansion) ---
         const EMBEDDED_DATA = [
             { "code": "I50.9", "dx": "Heart Failure, unspecified", "hccWeight": 0.331, "isHCC": true, "criticalFacts": ["EF < 40% qualifies for HCC", "Beta-blocker mandatory", "Daily weights required"], "advancesSharedSavings": true, "category": "Cardiology", "goodToKnow1": "Specify acuity (Acute/Chronic) and type (Systolic/Diastolic) for higher specificity.", "goodToKnow2": "HFrEF vs HFpEF distinction matters for treatment protocols.", "goodToKnow3": "Avoid 'Congestive Heart Failure NOS' if possible." },
             { "code": "J44.1", "dx": "COPD w/ acute exacerbation", "hccWeight": 0.348, "isHCC": true, "criticalFacts": ["Smoking cessation mandatory", "Home O2 eval if PaO2 < 55", "Pneumovax needed"], "advancesSharedSavings": true, "category": "Pulmonary", "goodToKnow1": "Must document 'Acute Exacerbation' to capture J44.1 over J44.9.", "goodToKnow2": "Simple Chronic Bronchitis does not risk adjust as high as COPD.", "goodToKnow3": "Look for rescue inhaler overuse as a sign of exacerbation." },
@@ -775,13 +716,12 @@
         let frame = 0;
         let score = 0;
         let coreHealth = 100;
-        let fuel = 100; // New resource
         let difficulty = 'medium';
         let baseRotation = 0;
         let friendlyFireWarningCooldown = 0;
         let targetSwitchTimer = 0;
         
-        // Rotation Mechanic
+        // New Rotation Mechanic
         let autoRotationSpeed = 0;
         
         // Settings State
@@ -805,10 +745,7 @@
             active: false,
             questions: [],
             currentQIndex: 0,
-            score: 0,
-            selectedDx: null,
-            selectedHcc: null,
-            selectedTier: null
+            score: 0
         };
 
         // Central Visual Feedback State
@@ -817,7 +754,7 @@
             code: '',
             dx: '',
             timer: 0,
-            maxTime: 30
+            maxTime: 30 // Approx 0.5s at 60fps
         };
 
         // Data Storage
@@ -827,6 +764,7 @@
         // Async Data Loading
         async function initGame() {
             try {
+                // Try fetch first
                 const response = await fetch('data.json');
                 if (response.ok) {
                     icdDatabase = await response.json();
@@ -839,9 +777,12 @@
             }
             
             document.getElementById('loading-overlay').classList.add('hidden');
+            
+            // Initialize Vocab after data load
             vocabularyBank = loadVocabulary();
             processOfflineDecay();
             
+            // Register buttons for sound
             document.querySelectorAll('button').forEach(btn => {
                 btn.addEventListener('mouseenter', () => sound.uiHover());
                 btn.addEventListener('click', () => sound.uiClick());
@@ -881,36 +822,28 @@
             const now = Date.now();
             const lastDecay = getLastDecayTime();
             const hoursPassed = (now - lastDecay) / (1000 * 60 * 60);
+            
             if (hoursPassed < 0.01) return;
             
             for (let code in vocabularyBank) {
                 const entry = vocabularyBank[code];
                 if (entry.mastery <= 0) continue;
+                
                 let hourlyDecay = 1.0;
-                if (entry.solidified) hourlyDecay = 0.1; 
+                if (entry.solidified) hourlyDecay = 0.1; // Solidified memories decay very slowly
                 else if (entry.mastery >= 70) hourlyDecay = 0.05;
                 else if (entry.mastery >= 30) hourlyDecay = 0.3;
+                
                 if (entry.hccWeight > 1.0) hourlyDecay *= 0.5;
+                
                 const totalDecay = hourlyDecay * hoursPassed;
                 entry.mastery = Math.max(0, entry.mastery - totalDecay);
             }
+            
             saveVocabulary(vocabularyBank);
             saveLastDecayTime();
         }
         
-        function toggleFullScreen() {
-            sound.uiClick();
-            if (!document.fullscreenElement) {
-                document.documentElement.requestFullscreen().catch(err => {
-                    console.log(`Error attempting to enable full-screen mode: ${err.message}`);
-                });
-            } else {
-                if (document.exitFullscreen) {
-                    document.exitFullscreen();
-                }
-            }
-        }
-
         const center = { x: 450, y: 450 };
         const arenaRadius = 380;
         const laserColors = ['#ff006e', '#00f5ff', '#39ff14', '#ffcc00', '#ff4081', '#9d4edd'];
@@ -931,10 +864,13 @@
         canvas.addEventListener('mousedown', () => mouse.active = true);
         canvas.addEventListener('mouseup', () => mouse.active = false);
         
+        // Handle side panel clicks for Stats
         infoCanvas.addEventListener('mousedown', (e) => {
             const rect = infoCanvas.getBoundingClientRect();
             const clickX = e.clientX - rect.left;
             const clickY = e.clientY - rect.top;
+            
+            // Check click regions
             for (let region of infoPanelClickRegions) {
                 if (clickX >= region.x && clickX <= region.x + region.width && 
                     clickY >= region.y && clickY <= region.y + region.height) {
@@ -964,6 +900,7 @@
         function speakClinicalData(dxData) {
             if (!gameSettings.speechEnabled || !('speechSynthesis' in window)) return;
             window.speechSynthesis.cancel();
+            
             const text = `${dxData.code}. ${dxData.dx}`;
             const codeUtterance = new SpeechSynthesisUtterance(text);
             codeUtterance.rate = 1.0;
@@ -982,6 +919,7 @@
             if (gameState === 'playing') gameState = 'paused';
             sound.uiClick();
             settingsModal.classList.remove('hidden');
+            // Init UI
             document.getElementById('opt-duration').value = gameSettings.targetDuration;
             document.getElementById('val-duration').textContent = gameSettings.targetDuration;
             document.getElementById('opt-rotation').value = gameSettings.rotationSpeed * 100;
@@ -991,6 +929,7 @@
         }
 
         function closeSettings() {
+            // Save from UI
             const dur = parseInt(document.getElementById('opt-duration').value);
             const rot = parseInt(document.getElementById('opt-rotation').value);
             const speech = document.getElementById('opt-speech').checked;
@@ -1008,11 +947,13 @@
             
             if (gameState === 'paused') {
                 gameState = 'playing';
-                draw();
+                draw(); // RESTART RENDER LOOP
             } else {
                 gameState = 'playing';
                 draw();
             }
+            
+            // Reset timer to avoid immediate switch if duration reduced
             if (targetSwitchTimer > gameSettings.targetDuration * 60) {
                 targetSwitchTimer = gameSettings.targetDuration * 60;
             }
@@ -1034,6 +975,7 @@
             const learnMoreSection = document.getElementById('learn-more-section');
             const learnMoreContent = document.getElementById('learn-more-content');
             
+            // Hide learn more content initially
             learnMoreContent.style.display = 'none';
             learnMoreContent.innerHTML = '';
             
@@ -1042,6 +984,7 @@
             const potentialPoints = Math.max(100, 500 - (attempts * 100));
             
             if (isSolid) {
+                // Show Full Stats
                 content.innerHTML = `
                     <div style="font-size:48px; color:#ffd700; text-align:center; margin-bottom:10px; text-shadow:0 0 15px #ffd700; font-family:'Courier New'">${code}</div>
                     <div style="font-size:18px; color:#fff; text-align:center; margin-bottom:30px;">${dx.dx}</div>
@@ -1059,17 +1002,62 @@
                             </div>
                         </div>
                     </div>
+                    <div class="stats-row">
+                        <span class="stats-label">ENCOUNTERS</span>
+                        <span class="stats-value">${vocab.hits}</span>
+                    </div>
+                    <div class="stats-row">
+                        <span class="stats-label">HCC WEIGHT</span>
+                        <span class="stats-value">${dx.hccWeight}</span>
+                    </div>
                 `;
                 learnMoreSection.classList.remove('hidden');
                 
-                learnMoreContent.innerHTML = `
-                    <strong>Category:</strong> ${dx.category || 'General'}<br><br>
-                    <strong>Clinical Pearl 1:</strong> ${dx.goodToKnow1 || 'N/A'}<br>
-                    <strong>Clinical Pearl 2:</strong> ${dx.goodToKnow2 || 'N/A'}<br>
-                    <strong>Clinical Pearl 3:</strong> ${dx.goodToKnow3 || 'N/A'}
+                // ADDITIVE: Populate Learn More with comprehensive clinical facts
+                let factsHtml = `
+                    <div style="margin-bottom:15px; border-bottom:1px solid #333; padding-bottom:10px;">
+                        <strong style="color:#ffd700; font-size:16px;">Category:</strong> 
+                        <span style="color:#fff;">${dx.category || 'General'}</span>
+                    </div>
+                    
+                    <div style="margin-bottom:15px;">
+                        <strong style="color:#00f5ff; display:block; margin-bottom:8px;">Critical Clinical Facts:</strong>
+                        <ul style="margin:0; padding-left:20px; color:#ddd;">
                 `;
                 
+                dx.criticalFacts.forEach(fact => {
+                    factsHtml += `<li style="margin-bottom:5px;">${fact}</li>`;
+                });
+                
+                factsHtml += `
+                        </ul>
+                    </div>
+                    
+                    <div style="margin-bottom:15px;">
+                        <strong style="color:#39ff14; display:block; margin-bottom:8px;">Clinical Pearls & Protocols:</strong>
+                        <div style="background:rgba(0,0,0,0.3); padding:10px; border-radius:4px; margin-bottom:8px;">
+                            <span style="color:#ffd700;">Pearl 1:</span> ${dx.goodToKnow1 || 'N/A'}
+                        </div>
+                        <div style="background:rgba(0,0,0,0.3); padding:10px; border-radius:4px; margin-bottom:8px;">
+                            <span style="color:#ffd700;">Pearl 2:</span> ${dx.goodToKnow2 || 'N/A'}
+                        </div>
+                        <div style="background:rgba(0,0,0,0.3); padding:10px; border-radius:4px;">
+                            <span style="color:#ffd700;">Pearl 3:</span> ${dx.goodToKnow3 || 'N/A'}
+                        </div>
+                    </div>
+                    
+                    <div style="margin-top:15px; padding-top:10px; border-top:1px solid #333;">
+                        <strong style="color:#ff006e;">Risk Adjustment Status:</strong> 
+                        <span style="color:${dx.isHCC ? '#ffd700' : '#666'};">
+                            ${dx.isHCC ? 'HCC ELIGIBLE (High Value Target)' : 'Non-HCC Supporting Code'}
+                        </span>
+                    </div>
+                `;
+                
+                learnMoreContent.innerHTML = factsHtml;
+                
             } else {
+                // Show Active Learning (Hidden DX)
                 content.innerHTML = `
                     <div style="font-size:48px; color:#00f5ff; text-align:center; margin-bottom:10px; text-shadow:0 0 15px #00f5ff; font-family:'Courier New'">${code}</div>
                     <div style="font-size:18px; color:#aaa; text-align:center; margin-bottom:30px; letter-spacing:2px;">[DIAGNOSIS ENCRYPTED]</div>
@@ -1090,6 +1078,7 @@
                 learnMoreSection.classList.add('hidden');
             }
             
+            // Toggle Solidify Button
             const btn = document.getElementById('btn-solidify');
             if (isSolid) {
                 btn.classList.add('hidden');
@@ -1114,7 +1103,7 @@
             sound.uiClick();
             statsModal.classList.add('hidden');
             gameState = 'playing';
-            draw();
+            draw(); // RESTART RENDER LOOP
         }
         
         function proceedToQuiz() {
@@ -1127,48 +1116,24 @@
             const vocab = vocabularyBank[code];
             if (!vocab) return;
             
+            // Init attempts if not present
             if (typeof vocab.solidifyAttempts === 'undefined') {
                 vocab.solidifyAttempts = 0;
             }
+            
+            // Pause Game (redundant check but safe)
             if (gameState === 'playing') gameState = 'paused';
             
             quizState = {
                 active: true,
                 code: code,
-                step: 0, // 0 is briefing
+                step: 1,
                 dxData: vocab.dxData,
                 correctAnswers: 0,
                 attempts: vocab.solidifyAttempts
             };
             
             quizModal.classList.remove('hidden');
-            
-            // Show Briefing First
-            document.getElementById('quiz-briefing').classList.remove('hidden');
-            document.getElementById('quiz-active').classList.add('hidden');
-            
-            const briefing = document.getElementById('briefing-content');
-            briefing.innerHTML = `
-                <strong style="color:#00f5ff; font-size:18px;">${code}</strong><br>
-                <div style="color:#fff; margin-bottom:10px;">${vocab.dxData.dx}</div>
-                <br>
-                <strong style="color:#ff006e">CRITICAL FACTS:</strong>
-                <ul style="margin-top:5px; padding-left:20px; color:#ddd;">
-                    ${vocab.dxData.criticalFacts.map(f => `<li>${f}</li>`).join('')}
-                </ul>
-                <br>
-                <strong style="color:#ffd700">CLINICAL PEARLS:</strong>
-                <div style="margin-top:5px; font-style:italic; color:#aaa;">
-                    "${vocab.dxData.goodToKnow1 || 'Review standard protocols.'}"
-                </div>
-            `;
-        }
-
-        function startQuizQuestions() {
-            sound.uiClick();
-            document.getElementById('quiz-briefing').classList.add('hidden');
-            document.getElementById('quiz-active').classList.remove('hidden');
-            quizState.step = 1;
             renderQuizStep();
         }
 
@@ -1179,10 +1144,13 @@
             const questionText = document.getElementById('quiz-question-text');
             
             if (quizState.step === 1) {
+                // Step 1: Identify Diagnosis
                 stepIndicator.textContent = "PROTOCOL CHECK: PHASE 1/2";
                 questionText.textContent = `Identify the clinical entity: ${quizState.code}`;
                 
+                // Generate Options
                 let options = [quizState.dxData.dx];
+                // Add distractors
                 while (options.length < 4) {
                     const r = icdDatabase[Math.floor(Math.random() * icdDatabase.length)];
                     if (!options.includes(r.dx) && r.code !== quizState.code) options.push(r.dx);
@@ -1197,10 +1165,11 @@
                     container.appendChild(btn);
                 });
             } else if (quizState.step === 2) {
+                // Step 2: Identify Best Practice
                 stepIndicator.textContent = "PROTOCOL CHECK: PHASE 2/2";
                 questionText.textContent = `Select the CRITICAL Best Practice for: ${quizState.dxData.dx}`;
                 
-                let correctFact = quizState.dxData.criticalFacts[0];
+                let correctFact = quizState.dxData.criticalFacts[0]; // Take first fact as key
                 let options = [correctFact];
                 
                 while (options.length < 4) {
@@ -1227,9 +1196,11 @@
                     quizState.step = 2;
                     renderQuizStep();
                 } else {
+                    // Success!
                     completeQuiz(true);
                 }
             } else {
+                // Fail
                 completeQuiz(false);
             }
         }
@@ -1240,13 +1211,15 @@
             
             if (success) {
                 sound.success();
+                // Solidify Logic
                 if (vocab) {
+                    // Calculate Diminishing Returns
                     const attempts = vocab.solidifyAttempts || 0;
                     const points = Math.max(100, 500 - (attempts * 100));
                     
                     vocab.solidified = true;
                     vocab.solidifiedTime = Date.now();
-                    vocab.mastery = 100; 
+                    vocab.mastery = 100; // Boost to 100
                     saveVocabulary(vocabularyBank);
                     
                     score += points;
@@ -1262,16 +1235,26 @@
                 showWarning("PROTOCOL FAILED", "left");
             }
             
+            // Resume Game
             gameState = 'playing';
             quizState.active = false;
-            draw();
+            draw(); // RESTART RENDER LOOP
         }
         
-        // --- ADVANCED EXAM MODE LOGIC ---
+        // --- EXAM MODE LOGIC ---
+        
+        // ADDITIVE: Helper to determine HCC value category
+        function getHCCCategory(hccWeight) {
+            if (hccWeight >= 0.5) return { class: 'high', label: 'HIGH VALUE' };
+            if (hccWeight >= 0.3) return { class: 'medium', label: 'MEDIUM VALUE' };
+            return { class: 'low', label: 'LOW VALUE' };
+        }
+        
         function startExamMode() {
-            sound.init(); 
+            sound.init(); // Ensure audio context started
             sound.uiClick();
             
+            // Filter known codes (must have been seen at least once)
             const knownCodes = Object.values(vocabularyBank).filter(v => v.mastery > 0);
             
             if (knownCodes.length < 3) {
@@ -1279,30 +1262,53 @@
                 return;
             }
 
+            // Setup Exam State
             examState.active = true;
             examState.score = 0;
             examState.currentQIndex = 0;
             examState.questions = [];
 
-            // Generate 5 Questions
+            // ADDITIVE: Generate 5 Questions with HCC Categories
             for (let i = 0; i < 5; i++) {
                 const vocab = knownCodes[Math.floor(Math.random() * knownCodes.length)];
+                const dx = vocab.dxData;
+                const category = getHCCCategory(dx.hccWeight);
+                
+                // 50/50 chance between DX identification or HCC category identification
+                const questionType = Math.random() > 0.5 ? 'DX' : 'CATEGORY';
                 
                 let q = {
-                    code: vocab.dxData.code,
-                    dxData: vocab.dxData,
-                    dxOptions: [],
-                    dxCorrectIndex: 0
+                    code: dx.code,
+                    dxData: dx,
+                    type: questionType,
+                    category: category,
+                    text: '',
+                    options: [],
+                    correctIndex: 0
                 };
 
-                let opts = [q.dxData.dx];
-                while (opts.length < 4) {
-                    const r = icdDatabase[Math.floor(Math.random() * icdDatabase.length)];
-                    if (!opts.includes(r.dx) && r.code !== q.code) opts.push(r.dx);
+                if (questionType === 'DX') {
+                    q.text = `Identify diagnosis for ${q.code}`;
+                    let opts = [dx.dx];
+                    // Distractors
+                    while (opts.length < 4) {
+                        const r = icdDatabase[Math.floor(Math.random() * icdDatabase.length)];
+                        if (!opts.includes(r.dx) && r.code !== q.code) opts.push(r.dx);
+                    }
+                    shuffleArray(opts);
+                    q.options = opts;
+                    q.correctIndex = opts.indexOf(dx.dx);
+                } else {
+                    // Category question: Show code and dx, ask for value level
+                    q.text = `Classify HCC value: ${q.code} (${dx.dx})`;
+                    q.options = [
+                        { text: "LOW VALUE HCC", class: "low" },
+                        { text: "MEDIUM VALUE HCC", class: "medium" },
+                        { text: "HIGH VALUE HCC", class: "high" }
+                    ];
+                    // Find correct index based on category
+                    q.correctIndex = q.options.findIndex(opt => opt.class === category.class);
                 }
-                shuffleArray(opts);
-                q.dxOptions = opts;
-                q.dxCorrectIndex = opts.indexOf(q.dxData.dx);
                 
                 examState.questions.push(q);
             }
@@ -1314,103 +1320,37 @@
 
         function renderExamQuestion() {
             const q = examState.questions[examState.currentQIndex];
-            examState.selectedDx = null;
-            examState.selectedHcc = null;
-            examState.selectedTier = null;
-            
-            // Reset UI
-            document.getElementById('exam-scenario-text').textContent = `Code: ${q.code}`;
-            document.getElementById('btn-submit-exam').classList.remove('hidden');
-            document.getElementById('btn-exit-exam').classList.add('hidden');
-            document.getElementById('hcc-tier-section').classList.add('hidden');
-            
-            // Render Dx Options
-            const dxContainer = document.getElementById('exam-dx-options');
-            dxContainer.innerHTML = '';
-            q.dxOptions.forEach((opt, idx) => {
-                const btn = document.createElement('button');
-                btn.className = 'quiz-btn';
-                btn.textContent = opt;
-                btn.onclick = () => selectExamDx(idx, btn);
-                dxContainer.appendChild(btn);
-            });
-            
-            // Reset Right Side Buttons
-            document.getElementById('btn-hcc-yes').classList.remove('selected');
-            document.getElementById('btn-hcc-no').classList.remove('selected');
-            document.querySelectorAll('#hcc-tier-section .quiz-btn').forEach(b => b.classList.remove('selected'));
-        }
-        
-        function selectExamDx(idx, btn) {
-            sound.uiClick();
-            examState.selectedDx = idx;
-            document.querySelectorAll('#exam-dx-options .quiz-btn').forEach(b => b.classList.remove('selected'));
-            btn.classList.add('selected');
-        }
-        
-        function selectExamHCC(isHCC) {
-            sound.uiClick();
-            examState.selectedHcc = isHCC;
-            document.getElementById('btn-hcc-yes').classList.toggle('selected', isHCC);
-            document.getElementById('btn-hcc-no').classList.toggle('selected', !isHCC);
-            
-            const tierSec = document.getElementById('hcc-tier-section');
-            if (isHCC) {
-                tierSec.classList.remove('hidden');
-            } else {
-                tierSec.classList.add('hidden');
-                examState.selectedTier = null;
-            }
-        }
-        
-        function selectExamTier(tier) {
-            sound.uiClick();
-            examState.selectedTier = tier;
-            document.querySelectorAll('#hcc-tier-section .quiz-btn').forEach(b => {
-                b.classList.remove('selected');
-                if (b.textContent.toLowerCase().includes(tier)) b.classList.add('selected');
-            });
-        }
-
-        function submitExamQuestion() {
-            const q = examState.questions[examState.currentQIndex];
-            
-            // Validate selections
-            if (examState.selectedDx === null || examState.selectedHcc === null) {
-                alert("Please complete the assessment.");
-                return;
-            }
-            if (examState.selectedHcc && examState.selectedTier === null) {
-                alert("Please specify the Severity Tier.");
-                return;
-            }
-            
-            // Calculate Points
-            let qScore = 0;
-            // 1. Diagnosis (40 pts)
-            if (examState.selectedDx === q.dxCorrectIndex) qScore += 40;
-            
-            // 2. HCC Status (40 pts)
-            if (examState.selectedHcc === q.dxData.isHCC) {
-                qScore += 40;
-                
-                // 3. Tier (20 pts)
-                if (q.dxData.isHCC) {
-                    let correctTier = 'mid';
-                    if (q.dxData.hccWeight < 0.3) correctTier = 'low';
-                    if (q.dxData.hccWeight > 0.6) correctTier = 'high';
-                    
-                    if (examState.selectedTier === correctTier) qScore += 20;
-                } else {
-                    qScore += 20; // Correctly identified no tier needed
-                }
-            }
-            
-            examState.score += qScore;
+            document.getElementById('exam-step-indicator').textContent = `QUESTION ${examState.currentQIndex + 1} / 5`;
             document.getElementById('exam-score-display').textContent = `SCORE: ${examState.score}`;
             
-            if (qScore > 80) sound.success();
-            else sound.fail();
+            // ADDITIVE: Display category badge in question
+            const categoryBadge = q.type === 'CATEGORY' ? '' : 
+                `<span class="exam-category ${q.category.class}">${q.category.label}</span>`;
+            document.getElementById('exam-question-text').innerHTML = q.text + categoryBadge;
+            
+            const container = document.getElementById('exam-options-container');
+            container.innerHTML = '';
+
+            q.options.forEach((opt, idx) => {
+                const btn = document.createElement('button');
+                btn.className = 'quiz-btn';
+                // Handle both string options and object options
+                btn.textContent = typeof opt === 'object' ? opt.text : opt;
+                btn.onclick = () => submitExamAnswer(idx === q.correctIndex);
+                container.appendChild(btn);
+            });
+            
+            document.getElementById('btn-exit-exam').classList.add('hidden');
+        }
+
+        function submitExamAnswer(isCorrect) {
+            if (isCorrect) {
+                sound.uiClick(); // Standard click
+                sound.shoot(); // Small reward sound
+                examState.score += 100;
+            } else {
+                sound.fail();
+            }
 
             examState.currentQIndex++;
             if (examState.currentQIndex < 5) {
@@ -1422,24 +1362,19 @@
 
         function finishExam() {
             sound.success();
-            document.getElementById('exam-body').innerHTML = `
-                <div style="text-align:center; padding:50px; width:100%;">
-                    <div style="font-size:32px; color:#fff; margin-bottom:20px;">ASSESSMENT COMPLETE</div>
-                    <div style="font-size:24px; color:#aaa; margin-bottom:10px;">FINAL SCORE</div>
-                    <div style="font-size:64px; color:#ffd700; font-family:'Courier New'; margin-bottom:40px;">${examState.score} / 500</div>
-                    <div style="color:#00f5ff;">Certificate generated.</div>
+            document.getElementById('exam-question-text').textContent = "EXAM COMPLETE";
+            document.getElementById('exam-options-container').innerHTML = `
+                <div style="text-align:center; font-size:24px; color:#fff;">
+                    FINAL SCORE: <span style="color:#ffd700">${examState.score}</span> / 500
+                </div>
+                <div style="text-align:center; margin-top:20px; color:#aaa; font-size:14px;">
+                    ${examState.score >= 400 ? 'MCP CERTIFICATION ACHIEVED' : 'REVIEW REQUIRED'}
                 </div>
             `;
-            document.getElementById('btn-submit-exam').classList.add('hidden');
             document.getElementById('btn-exit-exam').classList.remove('hidden');
             
-            // Add to main score
+            // ADDITIVE: Add exam score to main score
             score += examState.score;
-            
-            // Download Cert automatically if good score
-            if (examState.score >= 350) {
-                 setTimeout(() => downloadExamCertificate(examState.score), 1000);
-            }
         }
 
         function exitExamMode() {
@@ -1478,17 +1413,11 @@
                 while (diff < -Math.PI) diff += Math.PI * 2;
                 this.targetAngle += diff * 0.1;
                 
-                if (mouse.active && this.cooldown <= 0 && this.integrity > 0 && fuel > 0) {
+                if (mouse.active && this.cooldown <= 0 && this.integrity > 0) {
                     this.firing = !this.firing;
                     this.cooldown = 10;
-                    if(this.firing) {
-                        sound.shoot();
-                        fuel = Math.max(0, fuel - (difficulty === 'easy' ? 0.5 : (difficulty === 'medium' ? 1.5 : 2.5)));
-                    }
-                } else if (fuel <= 0) {
-                    this.firing = false; // No fuel
+                    if(this.firing) sound.shoot();
                 }
-                
                 if (this.cooldown > 0) this.cooldown--;
                 if (this.firing) {
                     this.integrity -= 0.05;
@@ -1569,6 +1498,7 @@
                 this.x = center.x + Math.cos(angle) * r;
                 this.y = center.y + Math.sin(angle) * r;
                 
+                // SPEED SCALING BASED ON DIFFICULTY
                 let speedMult = 1.0;
                 if (difficulty === 'medium') speedMult = 1.4;
                 if (difficulty === 'hard') speedMult = 1.8;
@@ -1578,10 +1508,15 @@
                 this.code = dxData.code;
                 this.dxData = dxData;
                 this.isTarget = isTarget;
-                this.maxHealth = isTarget ? tier + 1 : tier;
-                // HCCs get more HP to require overlaps
-                if (this.dxData.isHCC) this.maxHealth *= 2;
                 
+                // ADDITIVE: Harder HCCs - increased health significantly
+                let healthMultiplier = 1;
+                if (dxData.isHCC) {
+                    // HCCs are harder to kill based on their weight
+                    healthMultiplier = 2 + (dxData.hccWeight * 3);
+                }
+                
+                this.maxHealth = isTarget ? (tier + 1) * healthMultiplier : tier;
                 this.health = this.maxHealth;
                 this.dead = false;
                 this.pulse = Math.random() * Math.PI;
@@ -1617,7 +1552,16 @@
                     createExplosion(this.x, this.y, '#ff0000');
                     showWarning(this.dxData.isHCC ? "HCC TARGET LOST!" : "CODE MISSED!", "left");
                 }
-                // Cannon Hit Logic moved to main loop to handle overlaps better
+                cannons.forEach(c => {
+                    const cdx = this.x - c.x;
+                    const cdy = this.y - c.y;
+                    if (Math.sqrt(cdx*cdx + cdy*cdy) < 28) {
+                        c.integrity -= 15;
+                        this.health--;
+                        if (this.health <= 0) this.dead = true;
+                        createExplosion(this.x, this.y, '#ffaa00');
+                    }
+                });
                 this.pulse += 0.12;
             }
             
@@ -1763,13 +1707,18 @@
         function decayVocabularyRealtime() {
             decayFrameCounter++;
             if (decayFrameCounter % 60 !== 0) return;
+            
             saveLastDecayTime();
+            
             for (let code in vocabularyBank) {
                 const entry = vocabularyBank[code];
                 if (entry.mastery <= 0) continue;
+                
                 let secondDecay = entry.mastery >= 70 ? 0.0008 : (entry.mastery >= 30 ? 0.005 : 0.016);
-                if (entry.solidified) secondDecay *= 0.1; 
+                
+                if (entry.solidified) secondDecay *= 0.1; // Solidified memories are tough
                 if (entry.hccWeight > 0) secondDecay *= (1.0 / (1.0 + entry.hccWeight));
+                
                 entry.mastery = Math.max(0, entry.mastery - secondDecay);
             }
         }
@@ -1804,6 +1753,7 @@
                 infoCtx.fillText(code, 190, yPos);
                 yPos += 30;
                 
+                // Switch timer bar
                 const maxTime = gameSettings.targetDuration * 60;
                 const timerPct = targetSwitchTimer / maxTime;
                 infoCtx.fillStyle = '#333';
@@ -1887,12 +1837,14 @@
             yPos += 35;
             
             let calculatedRAF = 0.5;
+            let masteredCount = 0;
             
             Object.values(vocabularyBank).forEach(v => {
                 if (v.solidified) {
                     calculatedRAF += v.hccWeight;
+                    masteredCount++;
                 } else if (v.mastery > 70) {
-                    calculatedRAF += (v.hccWeight * 0.5); 
+                    calculatedRAF += (v.hccWeight * 0.5); // Partial credit
                 }
             });
 
@@ -1904,6 +1856,7 @@
             infoCtx.fillText('RAF SCORE: ' + calculatedRAF.toFixed(3), 190, yPos);
             yPos += 25;
 
+            // Show Arcade Score smaller
             infoCtx.fillStyle = '#fff';
             infoCtx.font = 'bold 16px "Courier New", monospace';
             infoCtx.fillText('PROTOCOL PTS: ' + score, 190, yPos);
@@ -1917,19 +1870,27 @@
             yPos += 60;
             
             // --- SPLIT REPOSITORY SECTION ---
+            
+            // Reset click regions
             infoPanelClickRegions = [];
 
             const allVocab = Object.entries(vocabularyBank).filter(([code, data]) => data.mastery > 5);
             const solidifiedItems = allVocab.filter(([code, data]) => data.solidified).sort((a,b) => b[1].mastery - a[1].mastery);
             const learningItems = allVocab.filter(([code, data]) => !data.solidified).sort((a,b) => b[1].mastery - a[1].mastery);
 
-            const drawRepoItems = (items, startY) => {
+            // Helper to draw items with scroll container support
+            const drawRepoItems = (items, startY, maxItems) => {
                 let x = 100;
                 let rowY = startY;
-                items.slice(0, 4).forEach(([code, data], index) => {
+                let itemsDrawn = 0;
+                
+                items.forEach(([code, data], index) => {
+                    if (itemsDrawn >= maxItems) return;
+                    
                     const isSolid = data.solidified;
                     const isHCC = data.dxData.isHCC;
                     
+                    // Draw box/ring
                     infoCtx.fillStyle = isSolid ? '#000' : '#1a1a2e';
                     infoCtx.fillRect(x - 80, rowY - 20, 160, 40);
                     
@@ -1940,7 +1901,7 @@
                         infoCtx.shadowColor = '#ffd700';
                         infoCtx.strokeRect(x - 82, rowY - 22, 164, 44);
                     } else if (isSolid) {
-                        infoCtx.strokeStyle = '#00f5ff'; 
+                        infoCtx.strokeStyle = '#00f5ff'; // Solid non-HCC
                         infoCtx.lineWidth = 3;
                         infoCtx.shadowBlur = 15;
                         infoCtx.shadowColor = '#00f5ff';
@@ -1952,12 +1913,14 @@
                         infoCtx.strokeRect(x - 80, rowY - 20, 160, 40);
                     }
                     
+                    // Memory Line (Progress Bar)
                     const memPct = data.mastery / 100;
                     infoCtx.fillStyle = data.mastery > 70 ? '#39ff14' : (data.mastery > 30 ? '#00f5ff' : '#ff006e');
                     infoCtx.shadowBlur = 5;
                     infoCtx.shadowColor = infoCtx.fillStyle;
                     infoCtx.fillRect(x - 80, rowY + 16, 160 * memPct, 4);
 
+                    // Register Click Region
                     infoPanelClickRegions.push({
                         x: x - 80,
                         y: rowY - 20,
@@ -1966,12 +1929,14 @@
                         code: code
                     });
 
+                    // Draw Code
                     infoCtx.fillStyle = isHCC ? '#ffd700' : (isSolid ? '#fff' : '#fff');
                     infoCtx.shadowBlur = isSolid ? 10 : 0;
                     infoCtx.font = 'bold 24px "Courier New", monospace';
                     infoCtx.textAlign = 'center';
                     infoCtx.fillText(code, x, rowY + 8);
                     
+                    itemsDrawn++;
                     if (index % 2 === 0) {
                         x += 180;
                     } else {
@@ -1979,21 +1944,30 @@
                         rowY += 60;
                     }
                 });
-                return rowY + 60; 
+                return rowY + 60; // Return next Y
             };
 
+            // Draw Solidified Section with scroll support
             infoCtx.textAlign = 'center';
             infoCtx.fillStyle = '#ffd700';
             infoCtx.shadowBlur = 10;
             infoCtx.shadowColor = '#ffd700';
             infoCtx.font = 'bold 16px "Courier New", monospace';
-            infoCtx.fillText('SOLIDIFIED PROTOCOLS', 190, yPos);
+            infoCtx.fillText(`SOLIDIFIED PROTOCOLS (${solidifiedItems.length})`, 190, yPos);
             yPos += 35;
 
             if (solidifiedItems.length > 0) {
-                drawRepoItems(solidifiedItems, yPos);
-                const rows = Math.ceil(Math.min(solidifiedItems.length, 4) / 2);
+                // Show up to 6 solidified items (2 rows of 3, or 3 rows of 2)
+                drawRepoItems(solidifiedItems, yPos, 6);
+                const rows = Math.ceil(Math.min(solidifiedItems.length, 6) / 2);
                 yPos += rows * 60;
+                
+                // Indicate if there are more
+                if (solidifiedItems.length > 6) {
+                    infoCtx.fillStyle = '#666';
+                    infoCtx.font = 'italic 12px "Segoe UI", sans-serif';
+                    infoCtx.fillText(`+${solidifiedItems.length - 6} more protocols...`, 190, yPos - 20);
+                }
             } else {
                 infoCtx.fillStyle = '#666';
                 infoCtx.font = 'italic 12px "Segoe UI", sans-serif';
@@ -2004,15 +1978,16 @@
 
             yPos += 20;
 
+            // Draw Learning Section
             infoCtx.fillStyle = '#00f5ff';
             infoCtx.shadowBlur = 10;
             infoCtx.shadowColor = '#00f5ff';
             infoCtx.font = 'bold 16px "Courier New", monospace';
-            infoCtx.fillText('ACTIVE LEARNING', 190, yPos);
+            infoCtx.fillText(`ACTIVE LEARNING (${learningItems.length})`, 190, yPos);
             yPos += 35;
 
             if (learningItems.length > 0) {
-                drawRepoItems(learningItems, yPos);
+                drawRepoItems(learningItems, yPos, 4);
             } else {
                 infoCtx.fillStyle = '#666';
                 infoCtx.font = 'italic 12px "Segoe UI", sans-serif';
@@ -2043,7 +2018,7 @@
         }
         
         function startGame(diff) {
-            sound.init(); 
+            sound.init(); // Initialize audio context on user interaction
             sound.uiClick();
 
             if (icdDatabase.length === 0) {
@@ -2053,15 +2028,18 @@
 
             difficulty = diff;
             gameState = 'playing';
-            fuel = 100;
             
+            // poolSize logic
             let poolSize = 3; 
             if (diff === 'medium') poolSize = 6;
             if (diff === 'hard') poolSize = 12;
 
-            if (diff === 'easy') autoRotationSpeed = 0.0005;   
-            if (diff === 'medium') autoRotationSpeed = 0.0015; 
-            if (diff === 'hard') autoRotationSpeed = 0.003;    
+            // --- ADDITIVE: Set rotation difficulty ---
+            // "add a very very slight turn... that increases as difficulty gets harder"
+            if (diff === 'easy') autoRotationSpeed = 0.0005;   // Very slight
+            if (diff === 'medium') autoRotationSpeed = 0.0015; // Noticeable
+            if (diff === 'hard') autoRotationSpeed = 0.003;    // Challenging
+            // ----------------------------------------
             
             let shuffledDb = shuffleArray([...icdDatabase]);
             const allDxWithMastery = shuffledDb.map(dx => {
@@ -2084,13 +2062,14 @@
             for (let i=0; i<6; i++) cannons.push(new Cannon(i, 6));
             
             document.getElementById('start-screen').classList.add('hidden');
-            document.getElementById('health-bar-container').classList.remove('hidden');
+            document.getElementById('health-bar').classList.remove('hidden');
             document.getElementById('core-label').classList.remove('hidden');
             document.getElementById('controls-hint').classList.remove('hidden');
             
             if (window.gameInterval) clearInterval(window.gameInterval);
             window.gameInterval = setInterval(() => { if (gameState === 'playing') update(); }, 1000/60);
             
+            // Initial Warning
             showWarning(`TARGET: ${currentTarget.code}`, "right");
             triggerCentralFeedback(currentTarget);
             
@@ -2127,6 +2106,7 @@
             const hccCaptured = Object.values(vocabularyBank).filter(v => v.dxData.isHCC && v.mastery >= 70).length;
             const dateStr = new Date().toLocaleDateString();
 
+            // Calculate RAF for Cert
             let finalRAF = 0.5;
             Object.values(vocabularyBank).forEach(v => {
                 if (v.solidified) finalRAF += v.hccWeight;
@@ -2157,83 +2137,39 @@
             link.href = certCanvas.toDataURL();
             link.click();
         }
-
-        function downloadExamCertificate(examScore) {
-            const certCanvas = document.createElement('canvas');
-            certCanvas.width = 800;
-            certCanvas.height = 600;
-            const cCtx = certCanvas.getContext('2d');
-
-            cCtx.fillStyle = '#0f0f1a';
-            cCtx.fillRect(0, 0, 800, 600);
-            cCtx.strokeStyle = '#39ff14';
-            cCtx.lineWidth = 15;
-            cCtx.strokeRect(20, 20, 760, 560);
-            
-            cCtx.fillStyle = '#fff';
-            cCtx.textAlign = 'center';
-            cCtx.font = 'bold 45px "Courier New", monospace';
-            cCtx.fillText('BOARD CERTIFICATION', 400, 100);
-            cCtx.fillStyle = '#39ff14';
-            cCtx.font = '30px "Courier New", monospace';
-            cCtx.fillText('MASTER CLINICAL PROGRAMMER (MCP)', 400, 150);
-
-            cCtx.fillStyle = '#ddd';
-            cCtx.font = '20px "Arial", sans-serif';
-            cCtx.fillText('This document certifies proficiency in', 400, 240);
-            cCtx.fillText('Advanced Risk Adjustment and Clinical Documentation.', 400, 270);
-
-            cCtx.font = 'bold 60px "Courier New", monospace';
-            cCtx.fillStyle = '#ffd700';
-            cCtx.fillText(`SCORE: ${examScore} / 500`, 400, 380);
-
-            const dateStr = new Date().toLocaleDateString();
-            cCtx.fillStyle = '#aaa';
-            cCtx.font = '18px "Arial", sans-serif';
-            cCtx.fillText(`Granted: ${dateStr}`, 400, 480);
-
-            const link = document.createElement('a');
-            link.download = 'mcp-certification.png';
-            link.href = certCanvas.toDataURL();
-            link.click();
-        }
         
         function update() {
             frame++;
             decayVocabularyRealtime();
             
+            // Update Central Feedback Timer
             if (centralFeedback.active) {
                 centralFeedback.timer--;
                 if (centralFeedback.timer <= 0) centralFeedback.active = false;
             }
 
-            // Controls affect fuel
-            let rotationCost = 0.1;
-            if (difficulty === 'medium') rotationCost = 0.2;
-            if (difficulty === 'hard') rotationCost = 0.4;
-
-            if (keys['KeyA'] && fuel > 0) {
-                baseRotation -= gameSettings.rotationSpeed;
-                fuel = Math.max(0, fuel - rotationCost);
-            }
-            if (keys['KeyS'] && fuel > 0) {
-                baseRotation += gameSettings.rotationSpeed;
-                fuel = Math.max(0, fuel - rotationCost);
-            }
+            // MODIFIED: Use variable rotation speed
+            if (keys['KeyA']) baseRotation -= gameSettings.rotationSpeed;
+            if (keys['KeyS']) baseRotation += gameSettings.rotationSpeed;
             
+            // --- ADDITIVE: Apply Auto Rotation based on Difficulty ---
             baseRotation += autoRotationSpeed;
+            // --------------------------------------------------------
 
+            // TARGET SWITCHING LOGIC
             targetSwitchTimer--;
             if (targetSwitchTimer <= 0) {
                 targetIndex = (targetIndex + 1) % activePool.length;
                 currentTarget = activePool[targetIndex];
-                targetSwitchTimer = gameSettings.targetDuration * 60; 
+                targetSwitchTimer = gameSettings.targetDuration * 60; // Use settings
                 
+                // MODIFIED: More detailed target feedback
                 const hccMsg = currentTarget.isHCC ? " [HCC]" : "";
                 showWarning(`${currentTarget.code} ${currentTarget.dx}${hccMsg}`, "right");
                 triggerCentralFeedback(currentTarget);
             }
             
+            // DIFFICULTY: MAX ALIEN COUNT SCALING
             let maxAliens = 12;
             let spawnRate = 100;
             
@@ -2305,8 +2241,6 @@
             
             aliens.forEach(alien => {
                 alien.update();
-                
-                // SINGLE LASER HITS
                 cannons.forEach(c => {
                     if (!c.firing || c.integrity<=0) return;
                     const dx = Math.cos(c.targetAngle);
@@ -2317,12 +2251,7 @@
                         const cy = c.y + dy*t;
                         const dist = Math.hypot(alien.x-cx, alien.y-cy);
                         if (dist < alien.radius+6) {
-                            // DAMAGE LOGIC
-                            let dmg = 0.4;
-                            // HCCs resist single lasers heavily
-                            if (alien.dxData.isHCC) dmg = 0.08; 
-                            
-                            alien.health -= dmg;
+                            alien.health -= 0.4;
                             if (alien.health<=0 && !alien.dead) {
                                 alien.dead = true;
                                 sound.explosion();
@@ -2330,15 +2259,22 @@
                                     if (alien.dxData.isHCC) {
                                         const hccBonus = Math.floor(100 * (1 + (alien.dxData.hccWeight * 2)));
                                         score += hccBonus;
-                                        // Refuel on HCC Kill
-                                        fuel = Math.min(100, fuel + 25);
-                                        coreHealth = Math.min(100, coreHealth+20);
                                     } else {
                                         score += 15;
-                                        fuel = Math.min(100, fuel + 5);
                                     }
+                                    
+                                    // ADDITIVE: Enhanced repair for HCC kills via crossing fire
+                                    let repairAmount = 20;
+                                    if (alien.dxData.isHCC && intersections.length > 0) {
+                                        // Bonus repair if killed while lasers are crossing
+                                        repairAmount = 40;
+                                        showWarning("CROSS-FIRE HCC ELIMINATION!", "right");
+                                    }
+                                    
+                                    coreHealth = Math.min(100, coreHealth + repairAmount);
                                     addBonusWord(alien.dxData);
                                     createExplosion(alien.x, alien.y, '#ffd700');
+                                    // Target switching is now handled by timer, not destruction
                                 } else {
                                     score += 10;
                                     createExplosion(alien.x, alien.y, alien.color);
@@ -2347,8 +2283,6 @@
                         }
                     }
                 });
-                
-                // INTERSECTION HITS (CRITICAL DAMAGE)
                 intersections.forEach(pt => {
                     if (Math.hypot(alien.x-pt.x, alien.y-pt.y) < 45 && !alien.dead) {
                         alien.dead = true;
@@ -2357,13 +2291,17 @@
                             if (alien.dxData.isHCC) {
                                 const hccBonus = Math.floor(150 * (1 + (alien.dxData.hccWeight * 2)));
                                 score += hccBonus;
-                                // Big Refuel
-                                fuel = Math.min(100, fuel + 40);
-                                coreHealth = Math.min(100, coreHealth+30);
                             } else {
                                 score += 20;
-                                fuel = Math.min(100, fuel + 10);
                             }
+                            
+                            // ADDITIVE: Enhanced repair for crossing fire destruction
+                            let repairAmount = 30;
+                            if (alien.dxData.isHCC) {
+                                repairAmount = 50; // HCCs give more integrity when cross-fired
+                            }
+                            
+                            coreHealth = Math.min(100, coreHealth + repairAmount);
                             addBonusWord(alien.dxData);
                             createExplosion(alien.x, alien.y, '#ffd700');
                         } else {
@@ -2382,7 +2320,6 @@
             }
             
             document.getElementById('health-fill').style.width = Math.max(0,coreHealth)+'%';
-            document.getElementById('fuel-fill').style.width = Math.max(0,fuel)+'%';
             
             if (coreHealth<=0) {
                 gameState = 'gameover';
@@ -2453,29 +2390,41 @@
             ctx.fillStyle = '#fff';
             ctx.beginPath(); ctx.arc(center.x, center.y, 16, 0, Math.PI*2); ctx.fill();
             
+            // Draw Central Feedback Overlay
             if (centralFeedback.active) {
                 ctx.save();
                 ctx.translate(center.x, center.y);
+                
+                // Box background
                 ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
                 ctx.strokeStyle = '#00f5ff';
                 ctx.lineWidth = 2;
                 ctx.shadowBlur = 20;
                 ctx.shadowColor = '#00f5ff';
+                
+                // Centered Rect
                 ctx.beginPath();
                 ctx.rect(-150, -50, 300, 100);
                 ctx.fill();
                 ctx.stroke();
+                
+                // Text
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
+                
+                // Code
                 ctx.font = 'bold 36px "Courier New", monospace';
                 ctx.fillStyle = '#ffd700';
                 ctx.shadowColor = '#ffd700';
                 ctx.shadowBlur = 10;
                 ctx.fillText(centralFeedback.code, 0, -15);
+                
+                // Diagnosis
                 ctx.font = 'bold 14px "Segoe UI", sans-serif';
                 ctx.fillStyle = '#fff';
                 ctx.shadowBlur = 0;
                 ctx.fillText(centralFeedback.dx.toUpperCase(), 0, 20);
+                
                 ctx.restore();
             }
 
