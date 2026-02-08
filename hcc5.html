@@ -1,0 +1,2494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CLINICAL CIRCUMFERENCE - ICD-10 Defense Protocol</title>
+    <style>
+        body {
+            margin: 0;
+            background: #050508;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: 'Courier New', 'Segoe UI', sans-serif;
+            overflow: hidden;
+            color: #00f5ff;
+        }
+        
+        #main-container {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            gap: 20px;
+            position: relative;
+        }
+        
+        #info-panel {
+            width: 380px;
+            height: 900px;
+            background: #050508;
+            border: 2px solid #1a1a2e;
+            border-radius: 8px;
+            box-shadow: 0 0 50px rgba(255, 0, 110, 0.3);
+            position: relative;
+            overflow: hidden;
+            cursor: default;
+        }
+        
+        #game-container {
+            position: relative;
+            width: 900px;
+            height: 900px;
+            box-shadow: 0 0 50px rgba(255, 0, 110, 0.3);
+            border: 2px solid #1a1a2e;
+            border-radius: 8px;
+            background: #050508;
+        }
+        
+        canvas {
+            display: block;
+        }
+        
+        #ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+        
+        #health-bar {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 400px;
+            height: 28px;
+            background: #1a1a2e;
+            border: 2px solid #ff006e;
+            border-radius: 14px;
+            overflow: hidden;
+            z-index: 5;
+        }
+        
+        #health-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff006e, #ff4081);
+            width: 100%;
+            transition: width 0.1s;
+            box-shadow: 0 0 20px #ff006e;
+        }
+        
+        #core-label {
+            position: absolute;
+            bottom: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 12px;
+            color: #ff006e;
+            text-shadow: 0 0 5px #ff006e;
+            background: rgba(0,0,0,0.8);
+            padding: 2px 10px;
+            border-radius: 2px;
+            z-index: 5;
+        }
+        
+        .warning {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 220px;
+            color: #ff3333;
+            font-size: 18px;
+            font-weight: bold;
+            opacity: 0;
+            pointer-events: none;
+            text-shadow: 0 0 20px #ff0000;
+            background: rgba(0,0,0,0.95);
+            padding: 20px;
+            border: 3px solid #ff0000;
+            border-radius: 8px;
+            text-align: center;
+            animation: flankPulse 0.6s ease-in-out;
+            z-index: 100;
+        }
+        
+        .warning.left-flank {
+            left: 30px;
+            border-left: 8px solid #ff0000;
+        }
+        
+        .warning.right-flank {
+            right: 30px;
+            border-right: 8px solid #ff0000;
+        }
+        
+        @keyframes flankPulse {
+            0% { opacity: 0; transform: translateY(-50%) translateX(20px); }
+            15% { opacity: 1; transform: translateY(-50%) translateX(0); }
+            85% { opacity: 1; transform: translateY(-50%) translateX(0); }
+            100% { opacity: 0; transform: translateY(-50%) translateX(-20px); }
+        }
+        
+        #controls-hint {
+            position: absolute;
+            top: 30px;
+            right: 30px;
+            text-align: right;
+            color: rgba(255,255,255,0.6);
+            font-size: 11px;
+            line-height: 1.6;
+            z-index: 5;
+        }
+
+        #btn-settings-toggle {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid #00f5ff;
+            color: #00f5ff;
+            padding: 8px 15px;
+            font-family: 'Courier New', monospace;
+            cursor: pointer;
+            z-index: 210;
+            pointer-events: auto;
+            border-radius: 4px;
+        }
+        
+        #btn-settings-toggle:hover {
+            background: #00f5ff;
+            color: #000;
+        }
+
+        /* Panel Cert Button */
+        #btn-panel-cert {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid #ffd700;
+            color: #ffd700;
+            padding: 8px 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            cursor: pointer;
+            z-index: 210;
+            pointer-events: auto;
+            border-radius: 4px;
+            width: 80%;
+        }
+
+        #btn-panel-cert:hover {
+            background: #ffd700;
+            color: #000;
+        }
+        
+        #start-screen, #game-over-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(5, 5, 8, 0.98);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 200;
+            pointer-events: auto;
+        }
+        
+        /* Modal for Quiz & Stats & Settings */
+        #quiz-modal, #stats-modal, #settings-modal, #exam-modal {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(5, 5, 8, 0.98);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 300;
+            pointer-events: auto;
+        }
+
+        .quiz-content {
+            width: 80%;
+            max-width: 600px;
+            background: #0f0f1a;
+            border: 2px solid #ffd700;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.2);
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        /* Special Exam Layout */
+        .exam-content {
+            width: 90%;
+            max-width: 900px;
+            display: flex;
+            flex-direction: row;
+            gap: 30px;
+            background: #0f0f1a;
+            border: 2px solid #39ff14;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 30px rgba(57, 255, 20, 0.2);
+        }
+        
+        .exam-left {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            border-right: 1px solid #333;
+            padding-right: 20px;
+        }
+        
+        .exam-right {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .settings-content {
+            width: 500px;
+            background: #0f0f1a;
+            border: 2px solid #00f5ff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 30px rgba(0, 245, 255, 0.2);
+        }
+
+        .settings-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .settings-label {
+            color: #fff;
+            font-family: 'Segoe UI', sans-serif;
+            font-size: 16px;
+        }
+
+        .settings-value {
+            color: #00f5ff;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            width: 60px;
+            text-align: right;
+        }
+
+        input[type=range] {
+            width: 200px;
+            accent-color: #00f5ff;
+        }
+
+        .quiz-question {
+            font-size: 20px;
+            color: #fff;
+            margin-bottom: 25px;
+            text-align: center;
+            line-height: 1.4;
+        }
+
+        .quiz-options {
+            display: grid;
+            gap: 15px;
+        }
+
+        .quiz-btn {
+            background: rgba(0, 245, 255, 0.1);
+            border: 1px solid #00f5ff;
+            color: #00f5ff;
+            padding: 15px;
+            font-family: 'Segoe UI', sans-serif;
+            font-size: 14px;
+            cursor: pointer;
+            text-align: left;
+            transition: all 0.2s;
+        }
+
+        .quiz-btn:hover {
+            background: #00f5ff;
+            color: #000;
+        }
+
+        /* Stats specific styles */
+        .stats-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            border-bottom: 1px solid #333;
+            padding-bottom: 5px;
+        }
+        .stats-label { color: #aaa; font-size: 14px; }
+        .stats-value { color: #fff; font-weight: bold; font-family: 'Courier New', monospace; }
+        
+        .title {
+            font-size: 48px;
+            letter-spacing: 6px;
+            color: #00f5ff;
+            text-shadow: 0 0 40px #00f5ff;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .subtitle {
+            font-size: 16px;
+            color: #ff006e;
+            margin-bottom: 50px;
+            max-width: 600px;
+            text-align: center;
+            line-height: 1.8;
+        }
+        
+        .difficulty-btn {
+            background: transparent;
+            border: 2px solid #00f5ff;
+            color: #00f5ff;
+            padding: 18px 50px;
+            margin: 12px;
+            font-family: 'Courier New', monospace;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+        }
+        
+        .difficulty-btn:hover {
+            background: #00f5ff;
+            color: #000;
+            box-shadow: 0 0 40px #00f5ff;
+            transform: scale(1.05);
+        }
+        
+        .difficulty-btn.hard {
+            border-color: #ff006e;
+            color: #ff006e;
+        }
+        
+        .difficulty-btn.hard:hover {
+            background: #ff006e;
+            color: #fff;
+            box-shadow: 0 0 40px #ff006e;
+        }
+
+        .cert-btn {
+            border-color: #ffd700;
+            color: #ffd700;
+        }
+        
+        .cert-btn:hover {
+            background: #ffd700;
+            color: #000;
+            box-shadow: 0 0 40px #ffd700;
+        }
+        
+        .exam-btn {
+            border-color: #39ff14;
+            color: #39ff14;
+        }
+        
+        .exam-btn:hover {
+            background: #39ff14;
+            color: #000;
+            box-shadow: 0 0 40px #39ff14;
+        }
+
+        .reset-btn {
+            border-color: #ff3333;
+            color: #ff3333;
+            font-size: 14px;
+            padding: 10px 30px;
+            margin-top: 30px;
+            opacity: 0.7;
+        }
+
+        .reset-btn:hover {
+            background: #ff3333;
+            color: #fff;
+            box-shadow: 0 0 30px #ff3333;
+            opacity: 1;
+        }
+        
+        .hidden { display: none !important; }
+        
+        #loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #050508;
+            color: #00f5ff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            z-index: 999;
+        }
+
+        .learn-more-box {
+            background: #1a1a2e;
+            padding: 15px;
+            margin-top: 15px;
+            border-left: 3px solid #00f5ff;
+            font-size: 14px;
+            color: #ddd;
+            line-height: 1.5;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="loading-overlay">INITIALIZING PROTOCOL...</div>
+    <div id="main-container">
+        <div id="info-panel">
+            <canvas id="info-canvas" width="380" height="900"></canvas>
+            <button id="btn-panel-cert" onclick="downloadCertificate()">DOWNLOAD CERTIFICATE</button>
+        </div>
+        
+        <div id="game-container">
+            <canvas id="game" width="900" height="900"></canvas>
+            
+            <div id="ui-layer">
+                <button id="btn-settings-toggle" onclick="openSettings()">SETTINGS [ESC]</button>
+                
+                <div id="health-bar" class="hidden">
+                    <div id="health-fill"></div>
+                </div>
+                <div id="core-label" class="hidden">INTEGRITY & FUEL (COMBINED SYSTEM)</div>
+                
+                <div id="controls-hint" class="hidden">
+                    <div style="color:#ffd700; margin-bottom:5px">★ GOLD = HCC HIGH VALUE</div>
+                    <div style="color:#39ff14; margin-bottom:5px">★ STAR = SHARED SAVINGS</div>
+                    [A] Rotate CCW | [S] Rotate CW<br>
+                    [MOUSE] Aim | [CLICK] Fire<br>
+                    <span style="color:#ff006e; font-weight:bold;">LASERS USE CORE HEALTH</span><br>
+                    <span style="color:#fff;">KILL HCC TO REFUEL</span>
+                </div>
+                
+                <div id="warning-container"></div>
+            </div>
+            
+            <!-- Settings Modal -->
+            <div id="settings-modal" class="hidden">
+                <div class="settings-content">
+                    <div class="title" style="font-size:28px; margin-bottom:15px; color:#00f5ff;">SYSTEM CONFIGURATION</div>
+                    
+                    <div class="settings-row">
+                        <span class="settings-label">Target Regime Duration (Sec)</span>
+                        <input type="range" id="opt-duration" min="5" max="60" value="20" oninput="updateSettingsUI()">
+                        <span id="val-duration" class="settings-value">20</span>
+                    </div>
+
+                    <div class="settings-row">
+                        <span class="settings-label">Rotation Sensitivity</span>
+                        <input type="range" id="opt-rotation" min="1" max="10" value="3" oninput="updateSettingsUI()">
+                        <span id="val-rotation" class="settings-value">3</span>
+                    </div>
+
+                    <div class="settings-row">
+                        <span class="settings-label">Audio Speech Synthesis</span>
+                        <div style="width:200px; text-align:left;">
+                            <input type="checkbox" id="opt-speech" checked style="accent-color:#00f5ff; transform:scale(1.5);">
+                        </div>
+                        <span class="settings-value"></span>
+                    </div>
+
+                     <div class="settings-row">
+                        <span class="settings-label">FX / Game Audio</span>
+                        <div style="width:200px; text-align:left;">
+                            <input type="checkbox" id="opt-sfx" checked style="accent-color:#00f5ff; transform:scale(1.5);">
+                        </div>
+                        <span class="settings-value"></span>
+                    </div>
+
+                    <div class="quiz-options" style="margin-top:30px;">
+                        <button class="difficulty-btn" style="font-size:16px; padding:10px; width:100%;" onclick="closeSettings()">Confirm Configuration</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Stats Modal -->
+            <div id="stats-modal" class="hidden">
+                <div class="quiz-content" style="border-color: #00f5ff; box-shadow: 0 0 30px rgba(0, 245, 255, 0.2);">
+                    <div class="title" style="font-size:28px; margin-bottom:15px; color:#00f5ff;">MEMORY DIAGNOSTIC</div>
+                    <div id="stats-content">
+                        <!-- Injected via JS -->
+                    </div>
+                     <!-- Learn More Section -->
+                    <div id="learn-more-section" class="hidden" style="width:100%">
+                         <button class="quiz-btn" style="width:100%; text-align:center; margin-bottom:10px;" onclick="toggleLearnMore()">REVIEW KNOWLEDGE BASE (LEARN MORE)</button>
+                         <div id="learn-more-content" class="learn-more-box">
+                             <!-- Injected -->
+                         </div>
+                    </div>
+                    
+                    <div class="quiz-options" style="margin-top:20px; grid-template-columns: 1fr 1fr;">
+                        <button class="difficulty-btn" style="font-size:16px; padding:10px;" onclick="closeStats()">Resume</button>
+                        <button id="btn-solidify" class="difficulty-btn cert-btn" style="font-size:16px; padding:10px;" onclick="proceedToQuiz()">Initiate Solidification</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quiz Modal -->
+            <div id="quiz-modal" class="hidden">
+                <div class="quiz-content">
+                    <div class="title" style="font-size:24px; margin-bottom:10px; color:#ffd700;">MEMORY SOLIDIFICATION</div>
+                    <div id="quiz-step-indicator" style="color:#aaa; margin-bottom:20px; text-align:center;">PROTOCOL CHECK: PHASE 1/2</div>
+                    <div id="quiz-question-text" class="quiz-question">Identify the clinical entity: E11.9</div>
+                    <div id="quiz-options-container" class="quiz-options">
+                        <!-- Options injected via JS -->
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Exam Mode Modal (UPDATED LAYOUT) -->
+            <div id="exam-modal" class="hidden">
+                <div class="exam-content">
+                    <div class="exam-left">
+                        <div class="title" style="font-size:24px; margin-bottom:10px; color:#39ff14;">MCP CERTIFICATION</div>
+                        <div id="exam-step-indicator" style="color:#aaa; margin-bottom:10px; text-align:center;">QUESTION 1 / 5</div>
+                        <div id="exam-score-display" style="color:#ffd700; margin-bottom:20px; text-align:center; font-family:'Courier New'">SCORE: 0</div>
+                        <div id="exam-question-text" class="quiz-question" style="text-align: left;">Loading Exam...</div>
+                    </div>
+                    <div class="exam-right">
+                        <div id="exam-options-container" class="quiz-options">
+                            <!-- Options injected via JS -->
+                        </div>
+                         <button id="btn-exit-exam" class="difficulty-btn reset-btn hidden" style="width:100%; margin-top:20px;" onclick="exitExamMode()">RETURN TO MAIN CONSOLE</button>
+                         <button id="btn-exam-cert" class="difficulty-btn cert-btn hidden" style="width:100%; margin-top:10px;" onclick="downloadCertificate()">DOWNLOAD EXAM CERT</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="start-screen">
+                <div class="title">CLINICAL CIRCUMFERENCE</div>
+                <div class="subtitle">
+                    ICD-10/HCC Risk Adjustment Protocol<br>
+                    Destroy <span style="color:#ffd700">HCC codes</span> for high value.<br>
+                    <span style="color:#ff6600">CRITICAL PROTOCOL:</span> CORE HEALTH IS FUEL.<br>
+                    Firing consumes Health. Taking damage consumes Health.<br>
+                    Low Health OR Damaged Cannons = <span style="color:#ff006e">Reduced Laser Range</span>.<br>
+                    <span style="color:#39ff14">DESTROY HCC TARGETS TO REFUEL SUBSTANTIALLY.</span><br>
+                    <span style="font-size:12px; color:#fff; margin-top:10px; display:block">Take the MCP Exam to instantly solidify knowledge.</span>
+                </div>
+                <button class="difficulty-btn" onclick="startGame('easy')">Residency (Slow, Few)</button>
+                <button class="difficulty-btn" onclick="startGame('medium')">Attending (Fast, Swarm)</button>
+                <button class="difficulty-btn hard" onclick="startGame('hard')">Chief (Critical Overload)</button>
+                
+                <div style="border-top: 1px solid #333; width: 60%; margin: 20px 0;"></div>
+                <button class="difficulty-btn cert-btn" onclick="downloadCertificate()">DOWNLOAD CERTIFICATE</button>
+                <button class="difficulty-btn exam-btn" onclick="startExamMode()">TAKE MCP EXAM (TEST MODE)</button>
+                
+                <button class="difficulty-btn reset-btn" onclick="resetProgress()">PURGE MEMORY CORE</button>
+            </div>
+            
+            <div id="game-over-screen" class="hidden">
+                <div class="title" style="color:#ff006e">SYSTEM FAILURE</div>
+                <div class="subtitle" id="final-score">Final RAF Score: 0</div>
+                <div style="color:#ffd700; margin-bottom:30px; font-size:18px" id="final-words">HCC Captured: 0</div>
+                <button class="difficulty-btn" onclick="location.reload()">Reboot EHR</button>
+                <button class="difficulty-btn cert-btn" onclick="downloadCertificate()">Download Certificate</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('game');
+        const ctx = canvas.getContext('2d');
+        const infoCanvas = document.getElementById('info-canvas');
+        const infoCtx = infoCanvas.getContext('2d');
+        const quizModal = document.getElementById('quiz-modal');
+        const statsModal = document.getElementById('stats-modal');
+        const settingsModal = document.getElementById('settings-modal');
+        const examModal = document.getElementById('exam-modal');
+        
+        // --- SOUND MANAGER ---
+        class SoundManager {
+            constructor() {
+                this.ctx = null;
+                this.enabled = true;
+            }
+            
+            init() {
+                if (!this.ctx) {
+                    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                if (this.ctx.state === 'suspended') {
+                    this.ctx.resume();
+                }
+            }
+
+            playTone(freq, type, duration, vol = 0.1) {
+                if (!this.enabled || !this.ctx) return;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+                gain.gain.setValueAtTime(vol, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + duration);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + duration);
+            }
+
+            playNoise(duration, vol = 0.2) {
+                if (!this.enabled || !this.ctx) return;
+                const bufferSize = this.ctx.sampleRate * duration;
+                const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) {
+                    data[i] = Math.random() * 2 - 1;
+                }
+                const noise = this.ctx.createBufferSource();
+                noise.buffer = buffer;
+                const gain = this.ctx.createGain();
+                gain.gain.setValueAtTime(vol, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + duration);
+                noise.connect(gain);
+                gain.connect(this.ctx.destination);
+                noise.start();
+            }
+
+            shoot() { 
+                if(!this.enabled) return;
+                this.playTone(800, 'sawtooth', 0.15, 0.05); 
+                // Slide frequency down for "pew"
+                if(this.ctx) {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.frequency.setValueAtTime(800, this.ctx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(100, this.ctx.currentTime + 0.15);
+                    gain.gain.setValueAtTime(0.05, this.ctx.currentTime);
+                    gain.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 0.15);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start();
+                    osc.stop(this.ctx.currentTime + 0.15);
+                }
+            }
+            
+            explosion() { 
+                this.playNoise(0.4, 0.3); 
+                this.playTone(100, 'sawtooth', 0.4, 0.1); 
+            }
+            
+            uiClick() { this.playTone(1200, 'sine', 0.05, 0.05); }
+            uiHover() { this.playTone(600, 'triangle', 0.02, 0.02); }
+            
+            success() {
+                if (!this.enabled || !this.ctx) return;
+                // Major arpeggio
+                setTimeout(() => this.playTone(523.25, 'sine', 0.2, 0.1), 0);
+                setTimeout(() => this.playTone(659.25, 'sine', 0.2, 0.1), 100);
+                setTimeout(() => this.playTone(783.99, 'sine', 0.4, 0.1), 200);
+            }
+
+            fail() {
+                if (!this.enabled || !this.ctx) return;
+                setTimeout(() => this.playTone(200, 'sawtooth', 0.3, 0.1), 0);
+                setTimeout(() => this.playTone(150, 'sawtooth', 0.5, 0.1), 200);
+            }
+        }
+        
+        const sound = new SoundManager();
+
+        // --- EMBEDDED DATA (User Provided + Expansion) ---
+        const EMBEDDED_DATA = [
+            { "code": "I50.9", "dx": "Heart Failure, unspecified", "hccWeight": 0.331, "isHCC": true, "criticalFacts": ["EF < 40% qualifies for HCC", "Beta-blocker mandatory", "Daily weights required"], "advancesSharedSavings": true, "category": "Cardiology", "goodToKnow1": "Specify acuity (Acute/Chronic) and type (Systolic/Diastolic) for higher specificity.", "goodToKnow2": "HFrEF vs HFpEF distinction matters for treatment protocols.", "goodToKnow3": "Avoid 'Congestive Heart Failure NOS' if possible." },
+            { "code": "J44.1", "dx": "COPD w/ acute exacerbation", "hccWeight": 0.348, "isHCC": true, "criticalFacts": ["Smoking cessation mandatory", "Home O2 eval if PaO2 < 55", "Pneumovax needed"], "advancesSharedSavings": true, "category": "Pulmonary", "goodToKnow1": "Must document 'Acute Exacerbation' to capture J44.1 over J44.9.", "goodToKnow2": "Simple Chronic Bronchitis does not risk adjust as high as COPD.", "goodToKnow3": "Look for rescue inhaler overuse as a sign of exacerbation." },
+            { "code": "N18.6", "dx": "End Stage Renal Disease", "hccWeight": 0.585, "isHCC": true, "criticalFacts": ["eGFR < 15 ml/min", "Fistula check required", "Phosphate binder compliance"], "advancesSharedSavings": true, "category": "Nephrology", "goodToKnow1": "Dialysis status (Z99.2) should also be coded.", "goodToKnow2": "ESRD status overrides CKD stage 5 in hierarchy.", "goodToKnow3": "Monitor for secondary hyperparathyroidism." },
+            { "code": "E11.9", "dx": "Type 2 Diabetes no complications", "hccWeight": 0.105, "isHCC": true, "criticalFacts": ["Annual Eye Exam", "Microalbumin check", "Foot exam"], "advancesSharedSavings": true, "category": "Endocrinology", "goodToKnow1": "Link complications! E11.9 is a missed opportunity if neuropathy exists.", "goodToKnow2": "Use E11.40 for Diabetic Neuropathy.", "goodToKnow3": "Use E11.21 for Diabetic Nephropathy." },
+            { "code": "F32.9", "dx": "Major Depressive Disorder, single", "hccWeight": 0.395, "isHCC": true, "criticalFacts": ["PHQ-9 Annual Screening", "Suicide risk assessment", "Medication adherence"], "advancesSharedSavings": true, "category": "Psychiatry", "goodToKnow1": "Must be 'Major' to risk adjust. 'Depression NOS' is not an HCC.", "goodToKnow2": "Remission status codes exist and should be used.", "goodToKnow3": "Document severity (Mild, Moderate, Severe)." },
+            { "code": "I48.0", "dx": "Paroxysmal Atrial Fibrillation", "hccWeight": 0.268, "isHCC": true, "criticalFacts": ["CHADS-VASc Score", "Anticoagulation review", "Rate control"], "advancesSharedSavings": true, "category": "Cardiology", "goodToKnow1": "Distinguish between Paroxysmal, Persistent, and Chronic.", "goodToKnow2": "Requires long-term anticoagulation monitoring.", "goodToKnow3": "Watch for bleeding risks." },
+            { "code": "E66.01", "dx": "Morbid Obesity", "hccWeight": 0.250, "isHCC": true, "criticalFacts": ["BMI > 40", "Diet/Exercise Counseling", "Comorbidity link"], "advancesSharedSavings": true, "category": "General", "goodToKnow1": "BMI > 35 with comorbidities also counts.", "goodToKnow2": "Just 'Obesity' (E66.9) is NOT an HCC.", "goodToKnow3": "Must document the BMI value in the note." },
+            { "code": "Z79.4", "dx": "Long term use of insulin", "hccWeight": 0.000, "isHCC": false, "criticalFacts": ["Supports Diabetes complexity", "Rx adherence", "Hypoglycemia risk"], "advancesSharedSavings": true, "category": "Endocrinology", "goodToKnow1": "Not an HCC itself but increases Diabetes HCC weight in some models.", "goodToKnow2": "Crucial for RxHCC models.", "goodToKnow3": "Do not use for temporary sliding scale in hospital." }
+        ];
+        
+        let gameState = 'start';
+        let frame = 0;
+        let score = 0;
+        let coreHealth = 100;
+        let difficulty = 'medium';
+        let baseRotation = 0;
+        let friendlyFireWarningCooldown = 0;
+        let targetSwitchTimer = 0;
+        
+        // New Rotation Mechanic
+        let autoRotationSpeed = 0;
+        
+        // Settings State
+        let gameSettings = {
+            targetDuration: 20, // seconds
+            rotationSpeed: 0.03,
+            speechEnabled: true,
+            sfxEnabled: true
+        };
+        
+        // Info Panel Scroll State
+        let infoPanelScrollY = 0;
+
+        const VOCAB_KEY = 'clinical_circumference_vocab';
+        const LAST_DECAY_KEY = 'clinical_circumference_last_decay';
+        
+        // Memory Solidification State
+        let quizState = { active: false, code: null, step: 0, correctAnswers: 0 };
+        let infoPanelClickRegions = [];
+        let selectedMemoryCode = null;
+        
+        // Exam Mode State
+        let examState = {
+            active: false,
+            questions: [],
+            currentQIndex: 0,
+            score: 0,
+            currentQuestionCode: null // Track which code is being asked about
+        };
+
+        // Central Visual Feedback State
+        let centralFeedback = {
+            active: false,
+            code: '',
+            dx: '',
+            timer: 0,
+            maxTime: 30 // Approx 0.5s at 60fps
+        };
+
+        // Data Storage
+        let icdDatabase = [];
+        let vocabularyBank = {};
+
+        // Async Data Loading
+        async function initGame() {
+            try {
+                // Try fetch first
+                const response = await fetch('data.json');
+                if (response.ok) {
+                    icdDatabase = await response.json();
+                } else {
+                    throw new Error('Fallback to embedded');
+                }
+            } catch (error) {
+                console.log('Using embedded data:', error);
+                icdDatabase = EMBEDDED_DATA;
+            }
+            
+            document.getElementById('loading-overlay').classList.add('hidden');
+            
+            // Initialize Vocab after data load
+            vocabularyBank = loadVocabulary();
+            processOfflineDecay();
+            
+            // Register buttons for sound
+            document.querySelectorAll('button').forEach(btn => {
+                btn.addEventListener('mouseenter', () => sound.uiHover());
+                btn.addEventListener('click', () => sound.uiClick());
+            });
+        }
+
+        window.onload = initGame;
+
+        function loadVocabulary() {
+            const saved = localStorage.getItem(VOCAB_KEY);
+            return saved ? JSON.parse(saved) : {};
+        }
+        
+        function saveVocabulary(vocab) {
+            localStorage.setItem(VOCAB_KEY, JSON.stringify(vocab));
+        }
+        
+        function getLastDecayTime() {
+            const saved = localStorage.getItem(LAST_DECAY_KEY);
+            return saved ? parseInt(saved) : Date.now();
+        }
+        
+        function saveLastDecayTime() {
+            localStorage.setItem(LAST_DECAY_KEY, Date.now().toString());
+        }
+
+        function resetProgress() {
+            sound.uiClick();
+            if(confirm("WARNING: This will erase all clinical mastery data. Proceed?")) {
+                localStorage.removeItem(VOCAB_KEY);
+                localStorage.removeItem(LAST_DECAY_KEY);
+                location.reload();
+            }
+        }
+        
+        function processOfflineDecay() {
+            const now = Date.now();
+            const lastDecay = getLastDecayTime();
+            const hoursPassed = (now - lastDecay) / (1000 * 60 * 60);
+            
+            if (hoursPassed < 0.01) return;
+            
+            for (let code in vocabularyBank) {
+                const entry = vocabularyBank[code];
+                if (entry.mastery <= 0) continue;
+                
+                let hourlyDecay = 1.0;
+                if (entry.solidified) hourlyDecay = 0.1; // Solidified memories decay very slowly
+                else if (entry.mastery >= 70) hourlyDecay = 0.05;
+                else if (entry.mastery >= 30) hourlyDecay = 0.3;
+                
+                if (entry.hccWeight > 1.0) hourlyDecay *= 0.5;
+                
+                const totalDecay = hourlyDecay * hoursPassed;
+                entry.mastery = Math.max(0, entry.mastery - totalDecay);
+            }
+            
+            saveVocabulary(vocabularyBank);
+            saveLastDecayTime();
+        }
+        
+        const center = { x: 450, y: 450 };
+        const arenaRadius = 380;
+        const laserColors = ['#ff006e', '#00f5ff', '#39ff14', '#ffcc00', '#ff4081', '#9d4edd'];
+        
+        let activePool = [];
+        let currentTarget = null;
+        let targetIndex = 0;
+        let decayFrameCounter = 0;
+        
+        const mouse = { x: 450, y: 450, active: false };
+        const keys = {};
+        
+        canvas.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            mouse.x = e.clientX - rect.left;
+            mouse.y = e.clientY - rect.top;
+        });
+        canvas.addEventListener('mousedown', () => mouse.active = true);
+        canvas.addEventListener('mouseup', () => mouse.active = false);
+        
+        // Handle side panel clicks for Stats & Scroll
+        infoCanvas.addEventListener('mousedown', (e) => {
+            const rect = infoCanvas.getBoundingClientRect();
+            const clickX = e.clientX - rect.left;
+            const clickY = e.clientY - rect.top;
+            
+            // Check click regions
+            for (let region of infoPanelClickRegions) {
+                if (clickX >= region.x && clickX <= region.x + region.width && 
+                    clickY >= region.y && clickY <= region.y + region.height) {
+                    if (gameState === 'playing' || gameState === 'paused') {
+                        sound.uiClick();
+                        openStatsModal(region.code);
+                        break;
+                    }
+                }
+            }
+        });
+        
+        // Scroll Event
+        infoCanvas.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            infoPanelScrollY += e.deltaY;
+            if (infoPanelScrollY < 0) infoPanelScrollY = 0;
+            // Max scroll calculated in draw loop or approximated
+        }, { passive: false });
+
+        window.addEventListener('keydown', (e) => {
+            keys[e.code] = true;
+            if (e.code === 'Space') e.preventDefault();
+            if (e.code === 'Escape') {
+                if (!settingsModal.classList.contains('hidden')) closeSettings();
+                else openSettings();
+            }
+        });
+        window.addEventListener('keyup', (e) => keys[e.code] = false);
+        
+        const cannons = [];
+        const aliens = [];
+        const particles = [];
+        
+        function speakClinicalData(dxData) {
+            if (!gameSettings.speechEnabled || !('speechSynthesis' in window)) return;
+            window.speechSynthesis.cancel();
+            
+            const text = `${dxData.code}. ${dxData.dx}`;
+            const codeUtterance = new SpeechSynthesisUtterance(text);
+            codeUtterance.rate = 1.0;
+            window.speechSynthesis.speak(codeUtterance);
+        }
+
+        function triggerCentralFeedback(dxData) {
+            centralFeedback.active = true;
+            centralFeedback.code = dxData.code;
+            centralFeedback.dx = dxData.dx;
+            centralFeedback.timer = centralFeedback.maxTime;
+        }
+
+        // --- SETTINGS UI ---
+        function openSettings() {
+            if (gameState === 'playing') gameState = 'paused';
+            sound.uiClick();
+            settingsModal.classList.remove('hidden');
+            // Init UI
+            document.getElementById('opt-duration').value = gameSettings.targetDuration;
+            document.getElementById('val-duration').textContent = gameSettings.targetDuration;
+            document.getElementById('opt-rotation').value = gameSettings.rotationSpeed * 100;
+            document.getElementById('val-rotation').textContent = Math.round(gameSettings.rotationSpeed * 100);
+            document.getElementById('opt-speech').checked = gameSettings.speechEnabled;
+            document.getElementById('opt-sfx').checked = gameSettings.sfxEnabled;
+        }
+
+        function closeSettings() {
+            // Save from UI
+            const dur = parseInt(document.getElementById('opt-duration').value);
+            const rot = parseInt(document.getElementById('opt-rotation').value);
+            const speech = document.getElementById('opt-speech').checked;
+            const sfx = document.getElementById('opt-sfx').checked;
+
+            gameSettings.targetDuration = dur;
+            gameSettings.rotationSpeed = rot / 100;
+            gameSettings.speechEnabled = speech;
+            gameSettings.sfxEnabled = sfx;
+            
+            sound.enabled = sfx;
+            sound.uiClick();
+
+            settingsModal.classList.add('hidden');
+            
+            if (gameState === 'paused') {
+                gameState = 'playing';
+                draw(); // RESTART RENDER LOOP
+            } else {
+                gameState = 'playing';
+                draw();
+            }
+            
+            // Reset timer to avoid immediate switch if duration reduced
+            if (targetSwitchTimer > gameSettings.targetDuration * 60) {
+                targetSwitchTimer = gameSettings.targetDuration * 60;
+            }
+        }
+
+        function updateSettingsUI() {
+            document.getElementById('val-duration').textContent = document.getElementById('opt-duration').value;
+            document.getElementById('val-rotation').textContent = document.getElementById('opt-rotation').value;
+        }
+
+        // --- STATS & QUIZ LOGIC ---
+        
+        function openStatsModal(code) {
+            if (gameState === 'playing') gameState = 'paused';
+            selectedMemoryCode = code;
+            const vocab = vocabularyBank[code];
+            const dx = vocab.dxData;
+            const content = document.getElementById('stats-content');
+            const learnMoreSection = document.getElementById('learn-more-section');
+            const learnMoreContent = document.getElementById('learn-more-content');
+            
+            // Hide learn more content initially
+            learnMoreContent.style.display = 'none';
+            learnMoreContent.innerHTML = '';
+            
+            const isSolid = vocab.solidified;
+            const attempts = vocab.solidifyAttempts || 0;
+            const potentialPoints = Math.max(100, 500 - (attempts * 100));
+            
+            if (isSolid) {
+                // Show Full Stats
+                content.innerHTML = `
+                    <div style="font-size:48px; color:#ffd700; text-align:center; margin-bottom:10px; text-shadow:0 0 15px #ffd700; font-family:'Courier New'">${code}</div>
+                    <div style="font-size:18px; color:#fff; text-align:center; margin-bottom:30px;">${dx.dx}</div>
+                    
+                    <div class="stats-row">
+                        <span class="stats-label">PROTOCOL STATUS</span>
+                        <span class="stats-value" style="color:#ffd700">SOLIDIFIED PROTOCOL</span>
+                    </div>
+                    <div class="stats-row">
+                        <span class="stats-label">MEMORY MASTERY</span>
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <span class="stats-value">${Math.floor(vocab.mastery)}%</span>
+                            <div style="width:100px; height:6px; background:#333; border-radius:3px;">
+                                <div style="width:${vocab.mastery}%; height:100%; background:#ffd700; border-radius:3px;"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="stats-row">
+                        <span class="stats-label">ENCOUNTERS</span>
+                        <span class="stats-value">${vocab.hits}</span>
+                    </div>
+                    <div class="stats-row">
+                        <span class="stats-label">HCC WEIGHT</span>
+                        <span class="stats-value">${dx.hccWeight}</span>
+                    </div>
+                `;
+                learnMoreSection.classList.remove('hidden');
+                
+                // Populate Learn More with Facts + Pearls
+                let factsHtml = dx.criticalFacts.map(f => `<li>${f}</li>`).join('');
+                learnMoreContent.innerHTML = `
+                    <strong>Category:</strong> ${dx.category || 'General'}<br><br>
+                    <strong>CLINICAL FACTS:</strong>
+                    <ul style="margin-top:5px; margin-bottom:15px; color:#fff;">
+                        ${factsHtml}
+                    </ul>
+                    <strong>Clinical Pearl 1:</strong> ${dx.goodToKnow1 || 'N/A'}<br>
+                    <strong>Clinical Pearl 2:</strong> ${dx.goodToKnow2 || 'N/A'}<br>
+                    <strong>Clinical Pearl 3:</strong> ${dx.goodToKnow3 || 'N/A'}
+                `;
+                
+            } else {
+                // Show Active Learning (Hidden DX)
+                content.innerHTML = `
+                    <div style="font-size:48px; color:#00f5ff; text-align:center; margin-bottom:10px; text-shadow:0 0 15px #00f5ff; font-family:'Courier New'">${code}</div>
+                    <div style="font-size:18px; color:#aaa; text-align:center; margin-bottom:30px; letter-spacing:2px;">[DIAGNOSIS ENCRYPTED]</div>
+                    
+                    <div class="stats-row">
+                        <span class="stats-label">PROTOCOL STATUS</span>
+                        <span class="stats-value" style="color:#00f5ff">ACTIVE LEARNING</span>
+                    </div>
+                    <div class="stats-row">
+                        <span class="stats-label">POTENTIAL REWARD</span>
+                        <span class="stats-value" style="color:#39ff14">${potentialPoints} PTS</span>
+                    </div>
+                     <div style="margin-top:20px; color:#666; font-style:italic; text-align:center;">
+                       Protocol data masked until verified.<br>
+                       Initiate Solidification to reveal clinical details.
+                    </div>
+                `;
+                learnMoreSection.classList.add('hidden');
+            }
+            
+            // Toggle Solidify Button
+            const btn = document.getElementById('btn-solidify');
+            if (isSolid) {
+                btn.classList.add('hidden');
+            } else {
+                btn.classList.remove('hidden');
+            }
+            
+            statsModal.classList.remove('hidden');
+        }
+        
+        function toggleLearnMore() {
+            sound.uiClick();
+            const content = document.getElementById('learn-more-content');
+            if (content.style.display === 'none') {
+                content.style.display = 'block';
+            } else {
+                content.style.display = 'none';
+            }
+        }
+        
+        function closeStats() {
+            sound.uiClick();
+            statsModal.classList.add('hidden');
+            gameState = 'playing';
+            draw(); // RESTART RENDER LOOP
+        }
+        
+        function proceedToQuiz() {
+            sound.uiClick();
+            statsModal.classList.add('hidden');
+            startSolidifyQuiz(selectedMemoryCode);
+        }
+
+        function startSolidifyQuiz(code) {
+            const vocab = vocabularyBank[code];
+            if (!vocab) return;
+            
+            // Init attempts if not present
+            if (typeof vocab.solidifyAttempts === 'undefined') {
+                vocab.solidifyAttempts = 0;
+            }
+            
+            // Pause Game (redundant check but safe)
+            if (gameState === 'playing') gameState = 'paused';
+            
+            quizState = {
+                active: true,
+                code: code,
+                step: 1,
+                dxData: vocab.dxData,
+                correctAnswers: 0,
+                attempts: vocab.solidifyAttempts
+            };
+            
+            quizModal.classList.remove('hidden');
+            renderQuizStep();
+        }
+
+        function renderQuizStep() {
+            const container = document.getElementById('quiz-options-container');
+            container.innerHTML = '';
+            const stepIndicator = document.getElementById('quiz-step-indicator');
+            const questionText = document.getElementById('quiz-question-text');
+            
+            if (quizState.step === 1) {
+                // Step 1: Identify Diagnosis
+                stepIndicator.textContent = "PROTOCOL CHECK: PHASE 1/2";
+                questionText.textContent = `Identify the clinical entity: ${quizState.code}`;
+                
+                // Generate Options
+                let options = [quizState.dxData.dx];
+                // Add distractors
+                while (options.length < 4) {
+                    const r = icdDatabase[Math.floor(Math.random() * icdDatabase.length)];
+                    if (!options.includes(r.dx) && r.code !== quizState.code) options.push(r.dx);
+                }
+                shuffleArray(options);
+                
+                options.forEach(opt => {
+                    const btn = document.createElement('button');
+                    btn.className = 'quiz-btn';
+                    btn.textContent = opt;
+                    btn.onclick = () => submitQuizAnswer(opt === quizState.dxData.dx);
+                    container.appendChild(btn);
+                });
+            } else if (quizState.step === 2) {
+                // Step 2: Identify Best Practice
+                stepIndicator.textContent = "PROTOCOL CHECK: PHASE 2/2";
+                questionText.textContent = `Select the CRITICAL Best Practice for: ${quizState.dxData.dx}`;
+                
+                let correctFact = quizState.dxData.criticalFacts[0]; // Take first fact as key
+                let options = [correctFact];
+                
+                while (options.length < 4) {
+                    const r = icdDatabase[Math.floor(Math.random() * icdDatabase.length)];
+                    const fact = r.criticalFacts[0];
+                    if (!options.includes(fact) && r.code !== quizState.code) options.push(fact);
+                }
+                shuffleArray(options);
+                
+                options.forEach(opt => {
+                    const btn = document.createElement('button');
+                    btn.className = 'quiz-btn';
+                    btn.textContent = opt;
+                    btn.onclick = () => submitQuizAnswer(opt === correctFact);
+                    container.appendChild(btn);
+                });
+            }
+        }
+
+        function submitQuizAnswer(isCorrect) {
+            if (isCorrect) {
+                sound.uiClick();
+                if (quizState.step === 1) {
+                    quizState.step = 2;
+                    renderQuizStep();
+                } else {
+                    // Success!
+                    completeQuiz(true);
+                }
+            } else {
+                // Fail
+                completeQuiz(false);
+            }
+        }
+
+        function completeQuiz(success) {
+            quizModal.classList.add('hidden');
+            const vocab = vocabularyBank[quizState.code];
+            
+            if (success) {
+                sound.success();
+                // Solidify Logic
+                if (vocab) {
+                    // Calculate Diminishing Returns
+                    const attempts = vocab.solidifyAttempts || 0;
+                    const points = Math.max(100, 500 - (attempts * 100));
+                    
+                    vocab.solidified = true;
+                    vocab.solidifiedTime = Date.now();
+                    vocab.mastery = 100; // Boost to 100
+                    saveVocabulary(vocabularyBank);
+                    
+                    score += points;
+                    showWarning(`SOLIDIFIED! +${points} PTS`, "right");
+                    createExplosion(center.x, center.y, '#ffd700');
+                }
+            } else {
+                sound.fail();
+                if (vocab) {
+                    vocab.solidifyAttempts = (vocab.solidifyAttempts || 0) + 1;
+                    saveVocabulary(vocabularyBank);
+                }
+                showWarning("PROTOCOL FAILED", "left");
+            }
+            
+            // Resume Game
+            gameState = 'playing';
+            quizState.active = false;
+            draw(); // RESTART RENDER LOOP
+        }
+        
+        // --- EXAM MODE LOGIC ---
+        function startExamMode() {
+            sound.init(); // Ensure audio context started
+            sound.uiClick();
+            
+            // Filter known codes (must have been seen at least once)
+            const knownCodes = Object.values(vocabularyBank).filter(v => v.mastery > 0);
+            
+            if (knownCodes.length < 3) {
+                alert("INSUFFICIENT DATA. Encounter more codes in the main console to generate an exam.");
+                return;
+            }
+
+            // Setup Exam State
+            examState.active = true;
+            examState.score = 0;
+            examState.currentQIndex = 0;
+            examState.questions = [];
+
+            // Generate 5 Mixed Questions
+            for (let i = 0; i < 5; i++) {
+                const vocab = knownCodes[Math.floor(Math.random() * knownCodes.length)];
+                
+                // Randomly select question type:
+                // 0: Value Tier
+                // 1: Identification (Code given, pick Dx)
+                // 2: Fact Check
+                const qType = Math.floor(Math.random() * 3);
+                
+                let q = {
+                    code: vocab.dxData.code,
+                    dxData: vocab.dxData,
+                    type: qType,
+                    text: '',
+                    options: [],
+                    correctIndex: 0
+                };
+
+                if (qType === 0) {
+                    // Value Tier
+                    q.text = `Analyze Clinical Entity:\n\n${q.code}\n${q.dxData.dx}\n\nDetermine Risk Adjustment Tier.`;
+                    let tier = "NON-HCC (Low Value)";
+                    if (q.dxData.isHCC) {
+                        if (q.dxData.hccWeight > 0.6) tier = "HIGH VALUE HCC (> 0.6)";
+                        else if (q.dxData.hccWeight > 0.3) tier = "MEDIUM VALUE HCC (0.3 - 0.6)";
+                        else tier = "LOW VALUE HCC (< 0.3)";
+                    }
+                    q.options = ["NON-HCC (Low Value)", "LOW VALUE HCC (< 0.3)", "MEDIUM VALUE HCC (0.3 - 0.6)", "HIGH VALUE HCC (> 0.6)"];
+                    q.correctIndex = q.options.indexOf(tier);
+                } 
+                else if (qType === 1) {
+                    // Identification
+                    q.text = `Identify the Diagnosis for Code: ${q.code}`;
+                    let opts = [q.dxData.dx];
+                    // Add distractors
+                    while (opts.length < 4) {
+                        const r = icdDatabase[Math.floor(Math.random() * icdDatabase.length)];
+                        if (!opts.includes(r.dx) && r.code !== q.code) opts.push(r.dx);
+                    }
+                    shuffleArray(opts);
+                    q.options = opts;
+                    q.correctIndex = opts.indexOf(q.dxData.dx);
+                }
+                else {
+                    // Fact Check
+                    q.text = `Which is a CRITICAL clinical fact for:\n${q.dxData.dx}?`;
+                    let correctFact = q.dxData.criticalFacts[0];
+                    let opts = [correctFact];
+                     while (opts.length < 4) {
+                        const r = icdDatabase[Math.floor(Math.random() * icdDatabase.length)];
+                        const f = r.criticalFacts[0];
+                        if (!opts.includes(f) && r.code !== q.code) opts.push(f);
+                    }
+                    shuffleArray(opts);
+                    q.options = opts;
+                    q.correctIndex = opts.indexOf(correctFact);
+                }
+                
+                examState.questions.push(q);
+            }
+
+            document.getElementById('start-screen').classList.add('hidden');
+            examModal.classList.remove('hidden');
+            document.getElementById('btn-exit-exam').classList.add('hidden');
+            document.getElementById('btn-exam-cert').classList.add('hidden');
+            renderExamQuestion();
+        }
+
+        function renderExamQuestion() {
+            const q = examState.questions[examState.currentQIndex];
+            examState.currentQuestionCode = q.code; // Track for solidification
+            
+            document.getElementById('exam-step-indicator').textContent = `QUESTION ${examState.currentQIndex + 1} / 5`;
+            document.getElementById('exam-score-display').textContent = `SCORE: ${examState.score}`;
+            document.getElementById('exam-question-text').innerText = q.text; 
+            
+            const container = document.getElementById('exam-options-container');
+            container.innerHTML = '';
+
+            q.options.forEach((opt, idx) => {
+                const btn = document.createElement('button');
+                btn.className = 'quiz-btn';
+                btn.textContent = opt;
+                btn.onclick = () => submitExamAnswer(idx === q.correctIndex);
+                container.appendChild(btn);
+            });
+        }
+
+        function submitExamAnswer(isCorrect) {
+            if (isCorrect) {
+                sound.uiClick(); 
+                sound.shoot();
+                examState.score += 100;
+                
+                // SOLIDIFY KNOWLEDGE REWARD
+                const code = examState.currentQuestionCode;
+                if (vocabularyBank[code]) {
+                    vocabularyBank[code].solidified = true;
+                    vocabularyBank[code].mastery = 100;
+                    vocabularyBank[code].solidifiedTime = Date.now();
+                    saveVocabulary(vocabularyBank);
+                }
+            } else {
+                sound.fail();
+            }
+
+            examState.currentQIndex++;
+            if (examState.currentQIndex < 5) {
+                renderExamQuestion();
+            } else {
+                finishExam();
+            }
+        }
+
+        function finishExam() {
+            sound.success();
+            document.getElementById('exam-question-text').textContent = "EXAM COMPLETE";
+            document.getElementById('exam-options-container').innerHTML = `
+                <div style="text-align:center; font-size:24px; color:#fff;">
+                    FINAL SCORE: <span style="color:#ffd700">${examState.score}</span> / 500
+                </div>
+                <div style="text-align:center; margin-top:10px; color:#aaa;">
+                    Correct answers have been SOLIDIFIED in your memory bank.
+                </div>
+            `;
+            document.getElementById('btn-exit-exam').classList.remove('hidden');
+            document.getElementById('btn-exam-cert').classList.remove('hidden');
+            
+            // Add to main score
+            score += examState.score;
+        }
+
+        function exitExamMode() {
+            sound.uiClick();
+            examModal.classList.add('hidden');
+            document.getElementById('start-screen').classList.remove('hidden');
+        }
+
+        class Cannon {
+            constructor(index, total) {
+                this.index = index;
+                this.angle = (Math.PI * 2 / total) * index;
+                this.targetAngle = 0;
+                this.x = 0;
+                this.y = 0;
+                this.firing = false;
+                this.cooldown = 0;
+                this.maxRange = arenaRadius * 1.3;
+                this.integrity = 100; // Condition of this specific turret
+                this.heat = 0;
+                this.color = laserColors[index % laserColors.length];
+                this.friendlyFireDamage = 0;
+            }
+            
+            // MODIFIED: Range depends on BOTH Turret Integrity AND Global Core Health (Fuel)
+            get range() {
+                // Calculate fuel pressure factor (Global Core Health)
+                const fuelFactor = Math.max(0.2, coreHealth / 100);
+                // Calculate mechanical condition factor (Local Integrity)
+                const mechFactor = Math.max(0.2, this.integrity / 100);
+                
+                // Combined factor. Both need to be high for full range.
+                // If fuel is 0, range drops significantly regardless of integrity.
+                return this.maxRange * (fuelFactor * mechFactor);
+            }
+            
+            update() {
+                const actualAngle = this.angle + baseRotation;
+                const targetX = center.x + Math.cos(actualAngle) * arenaRadius;
+                const targetY = center.y + Math.sin(actualAngle) * arenaRadius;
+                this.x += (targetX - this.x) * 0.1;
+                this.y += (targetY - this.y) * 0.1;
+                const dx = mouse.x - this.x;
+                const dy = mouse.y - this.y;
+                let targetAng = Math.atan2(dy, dx);
+                let diff = targetAng - this.targetAngle;
+                while (diff > Math.PI) diff -= Math.PI * 2;
+                while (diff < -Math.PI) diff += Math.PI * 2;
+                this.targetAngle += diff * 0.1;
+                
+                if (mouse.active && this.cooldown <= 0 && this.integrity > 0) {
+                    this.firing = !this.firing;
+                    this.cooldown = 10;
+                    if(this.firing) sound.shoot();
+                }
+                if (this.cooldown > 0) this.cooldown--;
+                if (this.firing) {
+                    // CONSUME CORE HEALTH (FUEL) WHEN FIRING
+                    // Difficulty adjustment for consumption
+                    let consumption = 0.3; 
+                    if (difficulty === 'hard') consumption = 0.5;
+                    coreHealth = Math.max(0, coreHealth - consumption);
+                    
+                    this.heat += 1.5;
+                    if (this.heat > 100) {
+                        this.firing = false;
+                        showWarning("CANNON OVERHEAT!", "right");
+                    }
+                } else {
+                    this.heat = Math.max(0, this.heat - 1);
+                }
+                
+                // Cap integrity logic (can still be damaged by aliens/friendly fire)
+                this.integrity = Math.max(0, Math.min(100, this.integrity));
+            }
+            
+            draw() {
+                const barWidth = 36, barHeight = 3, barX = this.x - barWidth/2, barY = this.y - 30;
+                ctx.fillStyle = '#111';
+                ctx.fillRect(barX, barY, barWidth, barHeight);
+                const healthPct = this.integrity / 100;
+                ctx.fillStyle = healthPct > 0.6 ? '#39ff14' : healthPct > 0.3 ? '#ffcc00' : '#ff006e';
+                ctx.fillRect(barX, barY, barWidth * healthPct, barHeight);
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.targetAngle);
+                ctx.fillStyle = this.integrity > 0 ? this.color : '#333';
+                ctx.shadowBlur = this.integrity > 30 ? 12 : 4;
+                ctx.shadowColor = this.color;
+                ctx.beginPath();
+                ctx.arc(0, 0, 20, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = this.integrity > 30 ? '#fff' : '#666';
+                ctx.fillRect(0, -8, 35, 16);
+                if (this.firing && this.integrity > 0 && coreHealth > 0) {
+                    ctx.fillStyle = '#fff';
+                    ctx.shadowBlur = 15;
+                    ctx.shadowColor = '#fff';
+                    ctx.beginPath();
+                    ctx.arc(0, 0, 8, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                ctx.restore();
+            }
+            
+            drawLaser() {
+                // Check integrity AND fuel
+                if (!this.firing || this.integrity <= 0 || coreHealth <= 0) return;
+                
+                const r = this.range; // Uses getter calculation
+                
+                const endX = this.x + Math.cos(this.targetAngle) * r;
+                const endY = this.y + Math.sin(this.targetAngle) * r;
+                
+                ctx.strokeStyle = this.color;
+                ctx.lineWidth = 8;
+                ctx.shadowBlur = 25;
+                ctx.shadowColor = this.color;
+                ctx.beginPath();
+                ctx.moveTo(this.x, this.y);
+                ctx.lineTo(endX, endY);
+                ctx.stroke();
+                
+                // Visual indicator of reduced range if range < maxRange * 0.8
+                if (r < this.maxRange * 0.8) {
+                    ctx.setLineDash([5, 5]);
+                }
+                
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 2;
+                ctx.shadowBlur = 10;
+                ctx.beginPath();
+                ctx.moveTo(this.x, this.y);
+                ctx.lineTo(endX, endY);
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+            
+            getLaserEndpoint() {
+                const r = this.range;
+                return {
+                    x: this.x + Math.cos(this.targetAngle) * r,
+                    y: this.y + Math.sin(this.targetAngle) * r
+                };
+            }
+        }
+        
+        class Alien {
+            constructor(dxData, tier, isTarget) {
+                const angle = Math.random() * Math.PI * 2;
+                const r = arenaRadius + 25;
+                this.x = center.x + Math.cos(angle) * r;
+                this.y = center.y + Math.sin(angle) * r;
+                
+                // SPEED SCALING BASED ON DIFFICULTY
+                let speedMult = 1.0;
+                if (difficulty === 'medium') speedMult = 1.4;
+                if (difficulty === 'hard') speedMult = 1.8;
+                
+                this.speed = (0.8 + Math.random()) * speedMult;
+                this.radius = 24;
+                this.code = dxData.code;
+                this.dxData = dxData;
+                this.isTarget = isTarget;
+                
+                // HCCs are harder to kill
+                let baseHp = isTarget ? tier + 1 : tier;
+                if (dxData.isHCC) baseHp *= 3; 
+                
+                this.maxHealth = baseHp;
+                this.health = this.maxHealth;
+                this.dead = false;
+                this.pulse = Math.random() * Math.PI;
+                
+                if (dxData.isHCC) {
+                    this.color = '#ffd700';
+                    this.baseColor = '#ffd700';
+                } else if (dxData.advancesSharedSavings) {
+                    this.color = '#00f5ff';
+                    this.baseColor = '#00f5ff';
+                } else {
+                    this.color = '#39ff14';
+                    this.baseColor = '#39ff14';
+                }
+            }
+            
+            update() {
+                const dx = center.x - this.x;
+                const dy = center.y - this.y;
+                const dist = Math.sqrt(dx*dx + dy*dy);
+                if (dist > 35) {
+                    this.x += (dx/dist) * this.speed;
+                    this.y += (dy/dist) * this.speed;
+                } else {
+                    // DAMAGE SCALING (Alien hits core)
+                    let dmgMult = 1.0;
+                    if (difficulty === 'hard') dmgMult = 1.5;
+                    
+                    const dmg = (this.dxData.isHCC ? 40 : 15) * dmgMult;
+                    coreHealth -= dmg; 
+                    this.dead = true;
+                    sound.explosion();
+                    createExplosion(this.x, this.y, '#ff0000');
+                    showWarning(this.dxData.isHCC ? "HCC TARGET LOST!" : "CODE MISSED!", "left");
+                }
+                cannons.forEach(c => {
+                    const cdx = this.x - c.x;
+                    const cdy = this.y - c.y;
+                    if (Math.sqrt(cdx*cdx + cdy*cdy) < 28) {
+                        c.integrity -= 15; // Contact damage to cannon integrity
+                        this.health--;
+                        if (this.health <= 0) this.dead = true;
+                        createExplosion(this.x, this.y, '#ffaa00');
+                    }
+                });
+                this.pulse += 0.12;
+            }
+            
+            draw() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                
+                if (this.dxData.isHCC) {
+                    ctx.shadowBlur = 25 + Math.sin(this.pulse*3)*10;
+                    ctx.shadowColor = '#ffd700';
+                    ctx.strokeStyle = `rgba(255, 215, 0, ${0.4 + Math.sin(this.pulse)*0.3})`;
+                    ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    ctx.arc(0, 0, this.radius + 22, 0, Math.PI*2);
+                    ctx.stroke();
+                    
+                    ctx.fillStyle = '#ffd700';
+                    ctx.font = 'bold 10px "Courier New", monospace';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(`${this.code} (HCC ${this.dxData.hccWeight})`, 0, this.radius + 22);
+                } 
+                
+                if (this.dxData.advancesSharedSavings) {
+                    ctx.strokeStyle = `rgba(0, 245, 255, ${0.3 + Math.sin(this.pulse)*0.2})`;
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    const spikes = 8;
+                    const outerRadius = this.radius + 18;
+                    const innerRadius = this.radius + 10;
+                    let rot = Math.PI / 2 * 3;
+                    let cx = 0, cy = 0;
+                    let x = cx, y = cy;
+                    let step = Math.PI / spikes;
+
+                    ctx.moveTo(cx, cy - outerRadius);
+                    for (let i = 0; i < spikes; i++) {
+                        x = cx + Math.cos(rot) * outerRadius;
+                        y = cy + Math.sin(rot) * outerRadius;
+                        ctx.lineTo(x, y);
+                        rot += step;
+
+                        x = cx + Math.cos(rot) * innerRadius;
+                        y = cy + Math.sin(rot) * innerRadius;
+                        ctx.lineTo(x, y);
+                        rot += step;
+                    }
+                    ctx.lineTo(cx, cy - outerRadius);
+                    ctx.closePath();
+                    ctx.stroke();
+                }
+                
+                const scale = 1 + Math.sin(this.pulse)*0.05;
+                ctx.scale(scale, scale);
+                const hpPct = this.health / this.maxHealth;
+                ctx.beginPath();
+                ctx.arc(0, 0, this.radius + 10, -Math.PI/2, -Math.PI/2 + (Math.PI*2*hpPct));
+                ctx.strokeStyle = this.health === 1 ? '#ff0000' : this.baseColor;
+                ctx.lineWidth = 3;
+                ctx.stroke();
+                
+                ctx.fillStyle = this.color;
+                ctx.shadowBlur = this.isTarget ? 20 : 15;
+                ctx.shadowColor = this.color;
+                ctx.beginPath();
+                ctx.arc(0, 0, this.radius, 0, Math.PI*2);
+                ctx.fill();
+                
+                ctx.fillStyle = this.dxData.isHCC ? '#000' : 'rgba(0,0,0,0.3)';
+                ctx.beginPath();
+                ctx.arc(0, 0, this.radius*0.65, 0, Math.PI*2);
+                ctx.fill();
+                
+                ctx.fillStyle = this.dxData.isHCC ? '#000' : '#fff';
+                ctx.shadowBlur = 0;
+                ctx.font = `bold ${this.isTarget ? 11 : 9}px "Courier New", monospace`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                
+                const parts = this.code.split('.');
+                if (parts.length > 1) {
+                    ctx.fillText(parts[0], 0, -4);
+                    ctx.fillText('.' + parts[1], 0, 6);
+                } else {
+                    ctx.fillText(this.code, 0, 1);
+                }
+                
+                ctx.restore();
+            }
+        }
+        
+        function createExplosion(x, y, color) {
+            for (let i=0; i<12; i++) {
+                particles.push({
+                    x: x, y: y,
+                    vx: (Math.random()-0.5)*10,
+                    vy: (Math.random()-0.5)*10,
+                    life: 1,
+                    color: color,
+                    size: Math.random()*5+2
+                });
+            }
+        }
+        
+        function showWarning(text, flank) {
+            const container = document.getElementById('warning-container');
+            const div = document.createElement('div');
+            div.className = `warning ${flank || 'right'}-flank`;
+            div.textContent = text;
+            container.appendChild(div);
+            setTimeout(() => div.remove(), 1000);
+        }
+        
+        function addBonusWord(dxData) {
+            const code = dxData.code;
+            const now = Date.now();
+            
+            if (!vocabularyBank[code]) {
+                vocabularyBank[code] = { 
+                    mastery: 0, 
+                    hits: 0, 
+                    lastSeen: now, 
+                    dxData: dxData,
+                    hccWeight: dxData.hccWeight,
+                    solidified: false
+                };
+            }
+            
+            const entry = vocabularyBank[code];
+            entry.hits++;
+            entry.lastSeen = now;
+            
+            let gain = 25;
+            if (entry.hits > 1) gain = 15;
+            if (entry.hits > 3) gain = 10;
+            if (entry.hits > 6) gain = 5;
+            
+            entry.mastery = Math.min(100, entry.mastery + gain);
+            saveVocabulary(vocabularyBank);
+            speakClinicalData(dxData);
+            triggerCentralFeedback(dxData);
+        }
+        
+        function decayVocabularyRealtime() {
+            decayFrameCounter++;
+            if (decayFrameCounter % 60 !== 0) return;
+            
+            saveLastDecayTime();
+            
+            for (let code in vocabularyBank) {
+                const entry = vocabularyBank[code];
+                if (entry.mastery <= 0) continue;
+                
+                let secondDecay = entry.mastery >= 70 ? 0.0008 : (entry.mastery >= 30 ? 0.005 : 0.016);
+                
+                if (entry.solidified) secondDecay *= 0.1; // Solidified memories are tough
+                if (entry.hccWeight > 0) secondDecay *= (1.0 / (1.0 + entry.hccWeight));
+                
+                entry.mastery = Math.max(0, entry.mastery - secondDecay);
+            }
+        }
+        
+        function drawInfoPanel() {
+            infoCtx.fillStyle = '#050508';
+            infoCtx.fillRect(0, 0, 380, 900);
+            infoCtx.strokeStyle = '#0f0f1a';
+            infoCtx.lineWidth = 1;
+            
+            for(let i=0; i<380; i+=25) { infoCtx.beginPath(); infoCtx.moveTo(i,0); infoCtx.lineTo(i,900); infoCtx.stroke(); }
+            for(let i=0; i<900; i+=25) { infoCtx.beginPath(); infoCtx.moveTo(0,i); infoCtx.lineTo(380,i); infoCtx.stroke(); }
+            
+            let yPos = 30;
+            infoCtx.fillStyle = '#00f5ff';
+            infoCtx.shadowBlur = 10;
+            infoCtx.shadowColor = '#00f5ff';
+            infoCtx.font = 'bold 22px "Courier New", monospace';
+            infoCtx.textAlign = 'center';
+            infoCtx.fillText('CLINICAL TARGET', 190, yPos);
+            yPos += 45;
+            
+            if (currentTarget) {
+                const code = currentTarget.code;
+                const vocabEntry = vocabularyBank[code];
+                const mastery = vocabEntry ? vocabEntry.mastery : 0;
+                
+                infoCtx.fillStyle = currentTarget.isHCC ? '#ffd700' : '#00f5ff';
+                infoCtx.shadowBlur = 20;
+                infoCtx.shadowColor = infoCtx.fillStyle;
+                infoCtx.font = 'bold 48px "Courier New", monospace';
+                infoCtx.fillText(code, 190, yPos);
+                yPos += 30;
+                
+                // Switch timer bar
+                const maxTime = gameSettings.targetDuration * 60;
+                const timerPct = targetSwitchTimer / maxTime;
+                infoCtx.fillStyle = '#333';
+                infoCtx.fillRect(90, yPos, 200, 4);
+                infoCtx.fillStyle = '#ff6600';
+                infoCtx.fillRect(90, yPos, 200 * (1-timerPct), 4);
+                yPos += 35;
+                
+                infoCtx.fillStyle = '#fff';
+                infoCtx.shadowBlur = 0;
+                infoCtx.font = 'bold 16px "Segoe UI", sans-serif';
+                infoCtx.fillText(currentTarget.dx.toUpperCase(), 190, yPos);
+                yPos += 35;
+                
+                if (currentTarget.isHCC) {
+                    infoCtx.fillStyle = '#ffd700';
+                    infoCtx.shadowBlur = 15;
+                    infoCtx.shadowColor = '#ffd700';
+                    infoCtx.fillRect(90, yPos - 20, 200, 28);
+                    infoCtx.fillStyle = '#000';
+                    infoCtx.font = 'bold 16px "Courier New", monospace';
+                    infoCtx.fillText(`★ HCC WEIGHT: ${currentTarget.hccWeight} ★`, 190, yPos);
+                    yPos += 35;
+                }
+                
+                if (currentTarget.advancesSharedSavings) {
+                    infoCtx.fillStyle = '#39ff14';
+                    infoCtx.shadowBlur = 10;
+                    infoCtx.shadowColor = '#39ff14';
+                    infoCtx.fillRect(80, yPos - 18, 220, 24);
+                    infoCtx.fillStyle = '#000';
+                    infoCtx.font = 'bold 12px "Courier New", monospace';
+                    infoCtx.fillText('◆ ADVANCES SHARED SAVINGS ◆', 190, yPos + 2);
+                    yPos += 35;
+                }
+                
+                yPos += 10;
+                infoCtx.fillStyle = '#ff006e';
+                infoCtx.font = 'bold 14px "Courier New", monospace';
+                infoCtx.fillText('CRITICAL CLINICAL FACTS:', 30, yPos);
+                yPos += 25;
+                
+                infoCtx.font = '13px "Segoe UI", sans-serif';
+                currentTarget.criticalFacts.forEach((fact, idx) => {
+                    if (idx % 2 === 0) {
+                        infoCtx.fillStyle = 'rgba(255,255,255,0.05)';
+                        infoCtx.fillRect(25, yPos - 15, 330, 22);
+                    }
+                    infoCtx.fillStyle = '#aaa';
+                    infoCtx.textAlign = 'left';
+                    infoCtx.fillStyle = currentTarget.isHCC ? '#ffd700' : '#00f5ff';
+                    infoCtx.fillText('•', 30, yPos);
+                    infoCtx.fillStyle = '#ddd';
+                    const words = fact.split(' ');
+                    let line = '';
+                    let xOffset = 45;
+                    for (let word of words) {
+                        const testLine = line + word + ' ';
+                        const metrics = infoCtx.measureText(testLine);
+                        if (metrics.width > 310 && line !== '') {
+                            infoCtx.fillText(line, xOffset, yPos);
+                            line = word + ' ';
+                            yPos += 18;
+                            xOffset = 45;
+                        } else {
+                            line = testLine;
+                        }
+                    }
+                    infoCtx.fillText(line, xOffset, yPos);
+                    yPos += 22;
+                });
+                yPos += 20;
+            }
+            
+            infoCtx.strokeStyle = '#ffd700';
+            infoCtx.lineWidth = 2;
+            infoCtx.beginPath();
+            infoCtx.moveTo(30, yPos);
+            infoCtx.lineTo(350, yPos);
+            infoCtx.stroke();
+            yPos += 35;
+            
+            let calculatedRAF = 0.5;
+            let masteredCount = 0;
+            
+            Object.values(vocabularyBank).forEach(v => {
+                if (v.solidified) {
+                    calculatedRAF += v.hccWeight;
+                    masteredCount++;
+                } else if (v.mastery > 70) {
+                    calculatedRAF += (v.hccWeight * 0.5); // Partial credit
+                }
+            });
+
+            infoCtx.fillStyle = '#39ff14';
+            infoCtx.shadowBlur = 15;
+            infoCtx.shadowColor = '#39ff14';
+            infoCtx.font = 'bold 32px "Courier New", monospace';
+            infoCtx.textAlign = 'center';
+            infoCtx.fillText('RAF SCORE: ' + calculatedRAF.toFixed(3), 190, yPos);
+            yPos += 25;
+            
+            // Database Stat
+            const knownCount = Object.keys(vocabularyBank).length;
+            const totalCount = icdDatabase.length || 0;
+            infoCtx.fillStyle = '#aaa';
+            infoCtx.font = '14px "Courier New", monospace';
+            infoCtx.fillText(`DATABASE INDEX: ${knownCount} / ${totalCount}`, 190, yPos);
+            yPos += 30;
+            
+            infoCtx.fillStyle = coreHealth < 30 ? '#ff0000' : '#00f5ff';
+            infoCtx.shadowBlur = coreHealth < 30 ? 20 : 10;
+            infoCtx.shadowColor = coreHealth < 30 ? '#ff0000' : '#00f5ff';
+            infoCtx.font = 'bold 18px "Courier New", monospace';
+            infoCtx.fillText('CORE INTEGRITY/FUEL: ' + Math.floor(coreHealth) + '%', 190, yPos);
+            yPos += 30; // Reduced margin to fit clip area
+            
+            // --- SCROLLABLE REPOSITORY SECTION ---
+            
+            // Define clipping area for the scrollable list
+            const clipY = yPos;
+            const clipHeight = 900 - clipY - 50; // Leave room for button at bottom
+            
+            infoCtx.save();
+            infoCtx.beginPath();
+            infoCtx.rect(0, clipY, 380, clipHeight);
+            infoCtx.clip();
+            
+            // Apply Scroll Offset
+            let scrollYPos = yPos + 30 - infoPanelScrollY;
+            
+            // Reset click regions
+            infoPanelClickRegions = [];
+
+            const allVocab = Object.entries(vocabularyBank).filter(([code, data]) => data.mastery > 5);
+            const solidifiedItems = allVocab.filter(([code, data]) => data.solidified).sort((a,b) => b[1].mastery - a[1].mastery);
+            const learningItems = allVocab.filter(([code, data]) => !data.solidified).sort((a,b) => b[1].mastery - a[1].mastery);
+
+            // Helper to draw items
+            const drawRepoItems = (items, startY) => {
+                let x = 100;
+                let rowY = startY;
+                items.forEach(([code, data], index) => {
+                    // Only draw if within view
+                    if (rowY > -50 && rowY < 950) {
+                        const isSolid = data.solidified;
+                        const isHCC = data.dxData.isHCC;
+                        
+                        // Draw box/ring
+                        infoCtx.fillStyle = isSolid ? '#000' : '#1a1a2e';
+                        infoCtx.fillRect(x - 80, rowY - 20, 160, 40);
+                        
+                        if (isHCC) {
+                            infoCtx.strokeStyle = '#ffd700';
+                            infoCtx.lineWidth = isSolid ? 3 : 2;
+                            infoCtx.shadowBlur = 15;
+                            infoCtx.shadowColor = '#ffd700';
+                            infoCtx.strokeRect(x - 82, rowY - 22, 164, 44);
+                        } else if (isSolid) {
+                            infoCtx.strokeStyle = '#00f5ff'; // Solid non-HCC
+                            infoCtx.lineWidth = 3;
+                            infoCtx.shadowBlur = 15;
+                            infoCtx.shadowColor = '#00f5ff';
+                            infoCtx.strokeRect(x - 82, rowY - 22, 164, 44);
+                        } else {
+                            infoCtx.strokeStyle = data.mastery > 70 ? '#39ff14' : '#00f5ff';
+                            infoCtx.lineWidth = 1;
+                            infoCtx.shadowBlur = 0;
+                            infoCtx.strokeRect(x - 80, rowY - 20, 160, 40);
+                        }
+                        
+                        // Memory Line (Progress Bar)
+                        const memPct = data.mastery / 100;
+                        infoCtx.fillStyle = data.mastery > 70 ? '#39ff14' : (data.mastery > 30 ? '#00f5ff' : '#ff006e');
+                        infoCtx.shadowBlur = 5;
+                        infoCtx.shadowColor = infoCtx.fillStyle;
+                        infoCtx.fillRect(x - 80, rowY + 16, 160 * memPct, 4);
+
+                        // Register Click Region (Adjust for scroll done at event level or store screen coords)
+                        // Storing SCREEN COORDINATES here makes the click handler easier
+                        infoPanelClickRegions.push({
+                            x: x - 80,
+                            y: rowY - 20,
+                            width: 160,
+                            height: 40,
+                            code: code
+                        });
+
+                        // Draw Code
+                        infoCtx.fillStyle = isHCC ? '#ffd700' : (isSolid ? '#fff' : '#fff');
+                        infoCtx.shadowBlur = isSolid ? 10 : 0;
+                        infoCtx.font = 'bold 24px "Courier New", monospace';
+                        infoCtx.textAlign = 'center';
+                        infoCtx.fillText(code, x, rowY + 8);
+                    }
+                    
+                    if (index % 2 === 0) {
+                        x += 180;
+                    } else {
+                        x = 100;
+                        rowY += 60;
+                    }
+                });
+                // Calculate total height occupied
+                const rows = Math.ceil(items.length / 2);
+                return rowY + (items.length % 2 === 1 ? 60 : 0); 
+            };
+
+            // Draw Solidified Section
+            infoCtx.textAlign = 'center';
+            infoCtx.fillStyle = '#ffd700';
+            infoCtx.shadowBlur = 10;
+            infoCtx.shadowColor = '#ffd700';
+            infoCtx.font = 'bold 16px "Courier New", monospace';
+            infoCtx.fillText('SOLIDIFIED PROTOCOLS', 190, scrollYPos);
+            scrollYPos += 35;
+
+            if (solidifiedItems.length > 0) {
+                drawRepoItems(solidifiedItems, scrollYPos);
+                // Calculate rows for next positioning
+                const rows = Math.ceil(solidifiedItems.length / 2);
+                scrollYPos += rows * 60;
+            } else {
+                infoCtx.fillStyle = '#666';
+                infoCtx.font = 'italic 12px "Segoe UI", sans-serif';
+                infoCtx.shadowBlur = 0;
+                infoCtx.fillText('No protocols solidified yet.', 190, scrollYPos);
+                scrollYPos += 40;
+            }
+
+            scrollYPos += 20;
+
+            // Draw Learning Section
+            infoCtx.fillStyle = '#00f5ff';
+            infoCtx.shadowBlur = 10;
+            infoCtx.shadowColor = '#00f5ff';
+            infoCtx.font = 'bold 16px "Courier New", monospace';
+            infoCtx.fillText('ACTIVE LEARNING', 190, scrollYPos);
+            scrollYPos += 35;
+
+            if (learningItems.length > 0) {
+                drawRepoItems(learningItems, scrollYPos);
+            } else {
+                infoCtx.fillStyle = '#666';
+                infoCtx.font = 'italic 12px "Segoe UI", sans-serif';
+                infoCtx.shadowBlur = 0;
+                infoCtx.fillText('No active data.', 190, scrollYPos);
+            }
+            
+            infoCtx.restore(); // Restore clip
+        }
+        
+        function getIntersection(c1, c2) {
+            const r1 = c1.range;
+            const r2 = c2.range;
+            const x1=c1.x, y1=c1.y, x2=c1.x+Math.cos(c1.targetAngle)*r1;
+            const y2=c1.y+Math.sin(c1.targetAngle)*r1;
+            const x3=c2.x, y3=c2.y, x4=c2.x+Math.cos(c2.targetAngle)*r2;
+            const y4=c2.y+Math.sin(c2.targetAngle)*r2;
+            const denom = (x1-x2)*(y3-y4)-(y1-y2)*(x3-x4);
+            if (Math.abs(denom)<0.001) return null;
+            const t = ((x1-x3)*(y3-y4)-(y1-y3)*(x3-x4))/denom;
+            const u = -((x1-x2)*(y1-y3)-(y1-y2)*(x1-x3))/denom;
+            if (t>=0 && t<=1 && u>=0 && u<=1) return {x:x1+t*(x2-x1), y:y1+t*(y2-y1)};
+            return null;
+        }
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+        
+        function startGame(diff) {
+            sound.init(); // Initialize audio context on user interaction
+            sound.uiClick();
+
+            if (icdDatabase.length === 0) {
+                alert("Data not loaded. Please ensure you are running this on a local server.");
+                return;
+            }
+
+            difficulty = diff;
+            gameState = 'playing';
+            
+            // poolSize logic
+            let poolSize = 3; 
+            if (diff === 'medium') poolSize = 6;
+            if (diff === 'hard') poolSize = 12;
+
+            // --- ADDITIVE: Set rotation difficulty ---
+            // "add a very very slight turn... that increases as difficulty gets harder"
+            if (diff === 'easy') autoRotationSpeed = 0.0005;   // Very slight
+            if (diff === 'medium') autoRotationSpeed = 0.0015; // Noticeable
+            if (diff === 'hard') autoRotationSpeed = 0.003;    // Challenging
+            // ----------------------------------------
+            
+            let shuffledDb = shuffleArray([...icdDatabase]);
+            const allDxWithMastery = shuffledDb.map(dx => {
+                const vocab = vocabularyBank[dx.code];
+                return {
+                    ...dx,
+                    currentMastery: vocab ? vocab.mastery : 0,
+                    needsRenewal: vocab && vocab.mastery > 0 && vocab.mastery < 30,
+                    isLearned: vocab && vocab.mastery > 70
+                };
+            });
+            
+            activePool = allDxWithMastery.slice(0, poolSize);
+            
+            targetIndex = 0;
+            currentTarget = activePool[0];
+            targetSwitchTimer = gameSettings.targetDuration * 60;
+            
+            cannons.length = 0;
+            for (let i=0; i<6; i++) cannons.push(new Cannon(i, 6));
+            
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('health-bar').classList.remove('hidden');
+            document.getElementById('core-label').classList.remove('hidden');
+            document.getElementById('controls-hint').classList.remove('hidden');
+            
+            if (window.gameInterval) clearInterval(window.gameInterval);
+            window.gameInterval = setInterval(() => { if (gameState === 'playing') update(); }, 1000/60);
+            
+            // Initial Warning
+            showWarning(`TARGET: ${currentTarget.code}`, "right");
+            triggerCentralFeedback(currentTarget);
+            
+            draw();
+        }
+
+        function downloadCertificate() {
+            sound.uiClick();
+            const certCanvas = document.createElement('canvas');
+            certCanvas.width = 800;
+            certCanvas.height = 600;
+            const cCtx = certCanvas.getContext('2d');
+
+            cCtx.fillStyle = '#f8f9fa';
+            cCtx.fillRect(0, 0, 800, 600);
+            cCtx.strokeStyle = '#1a1a2e';
+            cCtx.lineWidth = 15;
+            cCtx.strokeRect(20, 20, 760, 560);
+            cCtx.strokeStyle = '#ffd700';
+            cCtx.lineWidth = 5;
+            cCtx.strokeRect(30, 30, 740, 540);
+
+            cCtx.fillStyle = '#050508';
+            cCtx.textAlign = 'center';
+            cCtx.font = 'bold 40px "Times New Roman", serif';
+            cCtx.fillText('CERTIFICATE OF CLINICAL MASTERY', 400, 100);
+            cCtx.font = '24px "Times New Roman", serif';
+            cCtx.fillText('INTERNIST DIVISION - ICD-10 PROTOCOL', 400, 150);
+
+            cCtx.font = 'italic 20px "Arial", sans-serif';
+            cCtx.fillText('This certifies that the authorized user has demonstrated proficiency in', 400, 220);
+            cCtx.fillText('Risk Adjustment Coding and Shared Savings Documentation.', 400, 250);
+
+            const hccCaptured = Object.values(vocabularyBank).filter(v => v.dxData.isHCC && v.mastery >= 70).length;
+            const dateStr = new Date().toLocaleDateString();
+
+            // Calculate RAF for Cert
+            let finalRAF = 0.5;
+            Object.values(vocabularyBank).forEach(v => {
+                if (v.solidified) finalRAF += v.hccWeight;
+                else if (v.mastery > 70) finalRAF += (v.hccWeight * 0.5);
+            });
+
+            cCtx.font = 'bold 30px "Courier New", monospace';
+            cCtx.fillStyle = '#ff006e';
+            cCtx.fillText(`FINAL RAF SCORE: ${finalRAF.toFixed(3)}`, 400, 340);
+            cCtx.fillStyle = '#00f5ff';
+            cCtx.fillText(`HCC CODES MASTERED: ${hccCaptured}`, 400, 390);
+
+            cCtx.fillStyle = '#333';
+            cCtx.font = '18px "Arial", sans-serif';
+            cCtx.fillText(`Date Issued: ${dateStr}`, 400, 480);
+
+            cCtx.beginPath();
+            cCtx.moveTo(250, 520);
+            cCtx.lineTo(550, 520);
+            cCtx.strokeStyle = '#000';
+            cCtx.lineWidth = 2;
+            cCtx.stroke();
+            cCtx.font = '16px "Arial", sans-serif';
+            cCtx.fillText('CLINICAL CIRCUMFERENCE ADMINISTRATOR', 400, 545);
+
+            const link = document.createElement('a');
+            link.download = 'clinical-circumference-certificate.png';
+            link.href = certCanvas.toDataURL();
+            link.click();
+        }
+        
+        function update() {
+            frame++;
+            decayVocabularyRealtime();
+            
+            // Update Central Feedback Timer
+            if (centralFeedback.active) {
+                centralFeedback.timer--;
+                if (centralFeedback.timer <= 0) centralFeedback.active = false;
+            }
+
+            // MODIFIED: Use variable rotation speed
+            if (keys['KeyA']) baseRotation -= gameSettings.rotationSpeed;
+            if (keys['KeyS']) baseRotation += gameSettings.rotationSpeed;
+            
+            // --- ADDITIVE: Apply Auto Rotation based on Difficulty ---
+            baseRotation += autoRotationSpeed;
+            // --------------------------------------------------------
+
+            // TARGET SWITCHING LOGIC
+            targetSwitchTimer--;
+            if (targetSwitchTimer <= 0) {
+                targetIndex = (targetIndex + 1) % activePool.length;
+                currentTarget = activePool[targetIndex];
+                targetSwitchTimer = gameSettings.targetDuration * 60; // Use settings
+                
+                // MODIFIED: More detailed target feedback
+                const hccMsg = currentTarget.isHCC ? " [HCC]" : "";
+                showWarning(`${currentTarget.code} ${currentTarget.dx}${hccMsg}`, "right");
+                triggerCentralFeedback(currentTarget);
+            }
+            
+            // DIFFICULTY: MAX ALIEN COUNT SCALING
+            let maxAliens = 12;
+            let spawnRate = 100;
+            
+            if (difficulty === 'medium') { maxAliens = 18; spawnRate = 80; }
+            if (difficulty === 'hard') { maxAliens = 25; spawnRate = 50; }
+            
+            if (frame % spawnRate === 0 && aliens.length < maxAliens) {
+                const isTarget = Math.random() < 0.3;
+                let dxData;
+                if (isTarget) dxData = currentTarget;
+                else {
+                    let idx;
+                    do { idx = Math.floor(Math.random()*activePool.length); }
+                    while (activePool[idx].code === currentTarget.code);
+                    dxData = activePool[idx];
+                }
+                
+                let tier = 1;
+                if (difficulty === 'medium' && Math.random()>0.6) tier=2;
+                if (difficulty === 'hard') {
+                    const r=Math.random();
+                    if (r>0.7) tier=3;
+                    else if (r>0.4) tier=2;
+                }
+                aliens.push(new Alien(dxData, tier, isTarget));
+            }
+            
+            cannons.forEach(c => c.update());
+            
+            const intersections = [];
+            for (let i=0; i<cannons.length; i++) {
+                for (let j=i+1; j<cannons.length; j++) {
+                    if (cannons[i].firing && cannons[j].firing && cannons[i].integrity>0 && cannons[i].range > 0 && cannons[j].integrity>0 && cannons[j].range > 0 && coreHealth > 0) {
+                        const pt = getIntersection(cannons[i], cannons[j]);
+                        if (pt) intersections.push(pt);
+                    }
+                }
+            }
+            
+            cannons.forEach(shooter => {
+                if (!shooter.firing || shooter.integrity <= 0 || coreHealth <= 0) return;
+                const end = shooter.getLaserEndpoint();
+                cannons.forEach(target => {
+                    if (target === shooter || target.integrity <= 0) return;
+                    const dx = end.x - shooter.x;
+                    const dy = end.y - shooter.y;
+                    const lenSq = dx*dx + dy*dy;
+                    if (lenSq === 0) return;
+                    const t = Math.max(0, Math.min(1, ((target.x - shooter.x) * dx + (target.y - shooter.y) * dy) / lenSq));
+                    const closestX = shooter.x + t * dx;
+                    const closestY = shooter.y + t * dy;
+                    const dist = Math.hypot(target.x - closestX, target.y - closestY);
+                    if (dist < 25) {
+                        target.integrity -= 0.4;
+                        target.friendlyFireDamage += 0.4;
+                        if (frame % 5 === 0) createExplosion(closestX, closestY, '#ff6600');
+                        if (target.friendlyFireDamage > 20 && friendlyFireWarningCooldown === 0) {
+                            showWarning("FRIENDLY FIRE!", "right");
+                            friendlyFireWarningCooldown = 120;
+                        }
+                    }
+                });
+            });
+            if (friendlyFireWarningCooldown > 0) friendlyFireWarningCooldown--;
+            
+            intersections.forEach(pt => {
+                if (Math.hypot(pt.x-center.x, pt.y-center.y) < 65) coreHealth -= 0.4;
+            });
+            
+            aliens.forEach(alien => {
+                alien.update();
+                cannons.forEach(c => {
+                    if (!c.firing || c.integrity<=0 || coreHealth <= 0) return;
+                    const dx = Math.cos(c.targetAngle);
+                    const dy = Math.sin(c.targetAngle);
+                    const range = c.range;
+                    const t = ((alien.x-c.x)*dx + (alien.y-c.y)*dy);
+                    if (t>0 && t<range) {
+                        const cx = c.x + dx*t;
+                        const cy = c.y + dy*t;
+                        const dist = Math.hypot(alien.x-cx, alien.y-cy);
+                        if (dist < alien.radius+6) {
+                            alien.health -= 0.4;
+                            if (alien.health<=0 && !alien.dead) {
+                                alien.dead = true;
+                                sound.explosion();
+                                if (alien.isTarget) {
+                                    if (alien.dxData.isHCC) {
+                                        const hccBonus = Math.floor(100 * (1 + (alien.dxData.hccWeight * 2)));
+                                        score += hccBonus;
+                                        // HCC FUEL REGENERATION (Large)
+                                        coreHealth = Math.min(100, coreHealth + 25);
+                                    } else {
+                                        score += 15;
+                                        // Non-HCC FUEL REGENERATION (Small)
+                                        coreHealth = Math.min(100, coreHealth + 5);
+                                    }
+                                    
+                                    addBonusWord(alien.dxData);
+                                    createExplosion(alien.x, alien.y, '#ffd700');
+                                } else {
+                                    score += 10;
+                                    // Non-Target Kill
+                                    coreHealth = Math.min(100, coreHealth + 2);
+                                    createExplosion(alien.x, alien.y, alien.color);
+                                }
+                            }
+                        }
+                    }
+                });
+                intersections.forEach(pt => {
+                    if (Math.hypot(alien.x-pt.x, alien.y-pt.y) < 45 && !alien.dead) {
+                        // CROSSFIRE DEALS MASSIVE DAMAGE (Good for HCCs)
+                        alien.health -= 2.0; 
+                        
+                        if(alien.health <= 0) {
+                            alien.dead = true;
+                            sound.explosion();
+                            if (alien.isTarget) {
+                                if (alien.dxData.isHCC) {
+                                    const hccBonus = Math.floor(150 * (1 + (alien.dxData.hccWeight * 2)));
+                                    score += hccBonus;
+                                    // Massive Fuel Restore for Crossfire Kill
+                                    coreHealth = Math.min(100, coreHealth + 35);
+                                    showWarning("CROSSFIRE KILL! +FUEL", "right");
+                                } else {
+                                    score += 20;
+                                    coreHealth = Math.min(100, coreHealth + 10);
+                                }
+                                addBonusWord(alien.dxData);
+                                createExplosion(alien.x, alien.y, '#ffd700');
+                            } else {
+                                score += 25;
+                                coreHealth = Math.min(100, coreHealth + 5);
+                                createExplosion(alien.x, alien.y, '#ffcc00');
+                            }
+                        }
+                    }
+                });
+            });
+            
+            for (let i=aliens.length-1; i>=0; i--) if (aliens[i].dead) aliens.splice(i,1);
+            for (let i=particles.length-1; i>=0; i--) {
+                const p=particles[i];
+                p.x+=p.vx; p.y+=p.vy; p.life-=0.025; p.vx*=0.95; p.vy*=0.95;
+                if (p.life<=0) particles.splice(i,1);
+            }
+            
+            document.getElementById('health-fill').style.width = Math.max(0,coreHealth)+'%';
+            
+            if (coreHealth<=0) {
+                gameState = 'gameover';
+                sound.fail();
+                const hccCaptured = Object.values(vocabularyBank).filter(v => v.dxData.isHCC && v.mastery >= 70).length;
+                document.getElementById('game-over-screen').classList.remove('hidden');
+                
+                // Calculate Final RAF
+                let finalRAF = 0.5;
+                Object.values(vocabularyBank).forEach(v => {
+                    if (v.solidified) finalRAF += v.hccWeight;
+                    else if (v.mastery > 70) finalRAF += (v.hccWeight * 0.5);
+                });
+
+                document.getElementById('final-score').textContent = `Final RAF Score: ${finalRAF.toFixed(3)}`;
+                document.getElementById('final-words').textContent = `HCC Captured: ${hccCaptured}`;
+            }
+        }
+        
+        function draw() {
+            ctx.fillStyle = '#050508';
+            ctx.fillRect(0,0,900,900);
+            ctx.strokeStyle = '#1a1a2e';
+            ctx.lineWidth = 3;
+            ctx.setLineDash([12,12]);
+            ctx.beginPath();
+            ctx.arc(center.x, center.y, arenaRadius, 0, Math.PI*2);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            ctx.strokeStyle = '#0f0f1a';
+            ctx.lineWidth = 1;
+            for(let i=0; i<900; i+=50) {
+                ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i,900); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(0,i); ctx.lineTo(900,i); ctx.stroke();
+            }
+            
+            if (gameState==='playing') {
+                cannons.forEach((c1,i) => {
+                    cannons.forEach((c2,j) => {
+                        if (i<j && c1.firing && c2.firing && c1.integrity>0 && c1.range > 0 && c2.integrity>0 && c2.range > 0 && coreHealth > 0) {
+                            const pt = getIntersection(c1,c2);
+                            if (pt) {
+                                const pulse = Math.sin(frame*0.4)*6;
+                                ctx.fillStyle = '#ffaa00';
+                                ctx.shadowBlur = 35;
+                                ctx.shadowColor = '#ff6600';
+                                ctx.beginPath();
+                                ctx.arc(pt.x, pt.y, 28+pulse, 0, Math.PI*2);
+                                ctx.fill();
+                                ctx.fillStyle = '#fff';
+                                ctx.beginPath();
+                                ctx.arc(pt.x, pt.y, 10, 0, Math.PI*2);
+                                ctx.fill();
+                            }
+                        }
+                    });
+                });
+            }
+            
+            cannons.forEach(c => c.drawLaser());
+            ctx.shadowBlur = 40;
+            ctx.shadowColor = '#00f5ff';
+            ctx.fillStyle = '#00f5ff';
+            ctx.beginPath(); ctx.arc(center.x, center.y, 32, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(center.x, center.y, 45, -Math.PI/2, -Math.PI/2+(Math.PI*2*(coreHealth/100)));
+            ctx.strokeStyle = coreHealth<30?'#ff0000':'#00f5ff';
+            ctx.lineWidth = 4; ctx.stroke();
+            ctx.fillStyle = '#fff';
+            ctx.beginPath(); ctx.arc(center.x, center.y, 16, 0, Math.PI*2); ctx.fill();
+            
+            // Draw Central Feedback Overlay
+            if (centralFeedback.active) {
+                ctx.save();
+                ctx.translate(center.x, center.y);
+                
+                // Box background
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
+                ctx.strokeStyle = '#00f5ff';
+                ctx.lineWidth = 2;
+                ctx.shadowBlur = 20;
+                ctx.shadowColor = '#00f5ff';
+                
+                // Centered Rect
+                ctx.beginPath();
+                ctx.rect(-150, -50, 300, 100);
+                ctx.fill();
+                ctx.stroke();
+                
+                // Text
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                
+                // Code
+                ctx.font = 'bold 36px "Courier New", monospace';
+                ctx.fillStyle = '#ffd700';
+                ctx.shadowColor = '#ffd700';
+                ctx.shadowBlur = 10;
+                ctx.fillText(centralFeedback.code, 0, -15);
+                
+                // Diagnosis
+                ctx.font = 'bold 14px "Segoe UI", sans-serif';
+                ctx.fillStyle = '#fff';
+                ctx.shadowBlur = 0;
+                ctx.fillText(centralFeedback.dx.toUpperCase(), 0, 20);
+                
+                ctx.restore();
+            }
+
+            cannons.forEach(c => c.draw());
+            aliens.forEach(a => a.draw());
+            ctx.globalAlpha = 1;
+            particles.forEach(p => {
+                ctx.globalAlpha = p.life;
+                ctx.fillStyle = p.color;
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = p.color;
+                ctx.fillRect(p.x-p.size/2, p.y-p.size/2, p.size, p.size);
+            });
+            ctx.globalAlpha = 1;
+            drawInfoPanel();
+            if (gameState === 'playing') requestAnimationFrame(draw);
+        }
+    </script>
+</body>
+</html>
